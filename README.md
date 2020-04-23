@@ -7,3 +7,7 @@ Data Visualization with R
 
 ## Chapters
 ### [Population and Sampling Distributions](https://yalin1995.github.io/Data-Visualization-with-R/1.Population%20and%20Sampling%20Distributions/HamApp01.pdf)
+* [R Code(pdf)](https://yalin1995.github.io/Data-Visualization-with-R/1.Population%20and%20Sampling%20Distributions/Lecture01.pdf)
+* [R Code(html)](https://yalin1995.github.io/Data-Visualization-with-R/1.Population%20and%20Sampling%20Distributions/Lecture01.html)
+
+### Bivariate Regression Analysis 
