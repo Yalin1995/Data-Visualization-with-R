@@ -1,0 +1,514 @@
+---
+title: "Bivariate Regression Analysis"
+author: "Yalin Yang"
+date: "`r Sys.Date()`"
+output:
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+  html_document:
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
+    toc_float:
+      collapsed: no
+--- 
+
+# Scatter Plot & Effect Plots
+
+## Initialize Data
+
+**Relevant variables:**
+
+* price:   median home price in community
+* crime:   crime rate
+* nox:     nitrogen oxide in the air
+* dist:    weighted distance to five employment centers
+* rooms:   average number of in houses in the community
+* stratio: Student-teacher ratio of schools in the community
+* proptax: property tax in community per $1000 home value
+
+```{r message=FALSE, warning=FALSE}
+library(car); library(effects)
+hprice2 <- foreign::read.dta("http://fmwww.bc.edu/ec-p/data/wooldridge/hprice2.dta")
+summary(hprice2)
+```
+
+## Check normality
+
+```{r}
+summary(powerTransform(cbind(price,crime,nox,dist,rooms,stratio)~1, data=hprice2))
+```
+
+## Scatter Plot
+
+```{r fig.height=10, fig.width=15, message=FALSE, warning=FALSE}
+scatterplotMatrix(~price+crime+nox+dist+rooms+stratio, data=hprice2, pch=1, 
+                  smooth=list(span = 0.35,lty.smooth=1, col.smooth="red", col.var="red"),
+                  regLine=list(col="green"))
+```
+
+**Applied log-transformation on highly positive skewed variables**
+
+```{r fig.height=10, fig.width=15}
+scatterplotMatrix(~log(price)+log(crime)+log(nox)+log(dist)+rooms+stratio, 
+                  data=hprice2, pch=1, 
+                  smooth=list(span = 0.35,lty.smooth=1, col.smooth="red", col.var="red"),
+                  regLine=list(col="green"))
+```
+
+## Regression modeling on untransformed data
+
+### Plain Model
+
+```{r}
+mod0 <- lm(price~nox+dist+rooms+stratio, data=hprice2)
+summary(mod0)
+```
+
+### Quadratic term (Could use turkey test)
+
+```{r}
+mod0 <- lm(price~nox+dist+rooms+I(rooms^2)+stratio, data=hprice2)
+summary(mod0)
+```
+
+### Effect Plots
+
+```{r fig.height=8, fig.width=12}
+mod0.eff <- allEffects(mod0, xlevels=list(rooms=3:9))
+plot(mod0.eff, "rooms", main="Non-linear effect of # of rooms")
+```
+
+## Regression modeling on log-form data
+
+### Base model
+
+```{r}
+mod1 <- lm(log(price)~log(crime)+log(nox)+log(dist)+rooms+stratio, data=hprice2)
+summary(mod1)
+```
+
+### Quadratic effects
+
+```{r}
+mod2 <- lm(log(price)~log(crime)+log(nox)+log(dist)+rooms+I(rooms^2)+stratio, data=hprice2)
+summary(mod2)
+```
+
+**anova test**
+```{r}
+anova(mod1,mod2)
+```
+
+### Explore non-linear effect
+
+Turning point:  $-\frac{b}{2a}$  => $0.672/(2*0.072)=4.667$
+
+
+```{r fig.height=8, fig.width=12}
+mod2a.eff <- allEffects(mod2, xlevels=list(rooms=3:9))
+plot(mod2a.eff, "rooms", ylab="log(price)", main="Non-linear effect of # of rooms")
+```
+
+### Transfer dependent variable to the original scale
+
+```{r fig.height=8, fig.width=12}
+mod2b.eff <- allEffects(mod2, xlevels=list(rooms=3:9),
+                       transformation=list(link=log, inverse=exp))
+plot(mod2b.eff, "rooms", ylab="price", main="Non-linear effect of # of rooms")
+```
+
+# Conditional Effect Plot
+
+## Initialize Data
+
+**Key variables:**
+* stndfnl: 	Standardized outcome on final exam
+* atndrte: 	Percentage of class attendence
+* priGPA:  	Prior college grade point average
+* ACT:     	American College Testing score
+
+```{r}
+library(car); library(effects)
+attend <- foreign::read.dta("http://fmwww.bc.edu/ec-p/data/wooldridge/attend.dta")
+summary(attend)
+```
+
+## Regression Modeling
+
+**Scatter Plot**
+
+```{r fig.height=10, fig.width=15}
+scatterplotMatrix(~stndfnl+atndrte+priGPA+ACT, data=attend, pch=1, 
+                  smooth=list(span = 0.35,lty.smooth=1, col.smooth="red", col.var="red"),
+                  regLine=list(col="green"))
+```
+
+**Base model**
+
+```{r}
+mod1 <- lm(stndfnl~atndrte+priGPA+ACT, data=attend)
+summary(mod1)
+```
+
+**With interaction. Notice the "*" in the formula**
+
+```{r}
+mod2 <- lm(stndfnl~atndrte*priGPA+ACT, data=attend)
+summary(mod2)
+```
+
+**Partial F-test**
+here equal to the t-test for the interaction term
+
+```{r}
+anova(mod1,mod2)
+```
+
+## Conditional Effect Plot
+
+Effect of attendence rate at **average priGPA**
+
+```{r}
+(b <- coef(mod2))
+(mean(attend$priGPA))
+```
+
+```{r}
+cat("Partial effect of atndrte for priGPA=2.59:", b["atndrte"]+mean(attend$priGPA)*b["atndrte:priGPA"])
+```
+
+Test partial effect at priGPA=mean(attend$priGPA)
+
+```{r}
+linearHypothesis(mod2, c("atndrte+2.59*atndrte:priGPA"))
+```
+
+```{r fig.height=8, fig.width=12}
+plot(allEffects(mod2))
+```
+
+```{r fig.height=8, fig.width=12}
+plot(Effect(c("atndrte","priGPA"), mod2, 
+            xlevels=list(priGPA=seq(1.5, 3.5, by=0.5))))
+```
+
+# Partial Effects Demo
+
+## Initialize Data
+```{r fig.height=8, fig.width=12}
+concord <- foreign::read.spss("Concord1.sav",to.data.frame=T)
+car::scatterplot(water81~income, data=concord, 
+                 xlab="Income in $1,000",ylab="Wate consumption in 1981 in ft^2")
+```
+
+## Demonstration: Partial Effects
+
+```{r}
+mod1.lm <- lm(water81 ~ income, data=concord)
+summary(mod1.lm)
+```
+
+```{r}
+mod2.lm <- lm(water81 ~ income + water80, data=concord)
+summary(mod2.lm)
+```
+
+### Controling for water80
+
+```{r fig.height=6, fig.width=10}
+y.x2 <- residuals(lm(water81 ~ water80, data=concord)) 
+plot(concord$water81,y.x2)
+```
+```{r}
+cor(concord$water81,y.x2)
+cor(concord$water80,y.x2)
+```
+
+```{r}
+x1.x2 <- residuals(lm(income ~ water80, data=concord))
+cat("Sum of residuals for Water81|Water80:",sum(y.x2),"\n")                   #sum of residuals = 0
+cat("Sum of residuals for Income|Water80: ",sum(x1.x2),"\n")
+```
+
+```{r fig.height=8, fig.width=12}
+scatterplot(y.x2~x1.x2, xlab=bquote(hat(bold(e))["Income|Water80"]),
+            ylab=bquote(hat(bold(e))["Water81|Water80"]))   
+```
+
+**compare with coefficients of mod2.lm**
+
+```{r}
+summary(lm(y.x2 ~ x1.x2-1))
+```
+
+### Controling for income
+
+```{r fig.height=8, fig.width=12}
+y.x1 <- residuals(lm(water81 ~ income, data=concord))                       
+x2.x1 <- residuals(lm(water80 ~ income, data=concord))
+scatterplot(y.x1~x2.x1, xlab=bquote(hat(bold(e))["Water81|Income"]),          
+            ylab=bquote(hat(bold(e))["Water80|Income"]))   
+```
+
+**compare with coefficients of mod2.lm**
+
+```{r}
+summary(lm(y.x1 ~ x2.x1-1)) 
+```
+
+# Beta Coefficients
+
+## Linear Modeling
+
+full model
+```{r}
+mod3.lm <- lm(water81 ~ income+water80+educat+retire+peop81+cpeop, data=concord)
+summary(mod3.lm)
+```
+
+
+convert factor to metric. retired:"yes"=1,"no"=0 
+
+```{r}
+concord$retireDummy <- as.numeric(concord$retire)-1
+```
+
+Transfer all variables to scaled form
+
+```{r}
+concordNew <- concord[ ,sapply(concord,is.numeric)]  # Remove non-numeric variables
+concordScale <- as.data.frame(scale(concordNew))     # apply z-transformation with scale function
+                                                     # dataframe concordScale holds the transformed values
+mod4.lm <- lm(water81 ~ -1+income+water80+educat+retireDummy+peop81+cpeop, data=concordScale)
+summary(mod4.lm) 
+```
+
+## coefficent plot
+
+coefficent plot useful for beta weights because the parameters are on the same scale
+
+```{r fig.height=8, fig.width=12}
+library (coefplot)
+coefplot(mod4.lm)
+```
+
+## Partial F-test
+
+H0: $\beta_{RETIRE}=\beta_{CPEOP}=0$
+
+```{r}
+mod5.lm <- lm(water81 ~ water80+income+educat+peop81, data=concord)
+summary(mod5.lm)
+```
+
+**Compare both models**
+
+```{r}
+anova(mod5.lm,mod3.lm)
+```
+
+**Nested F test**
+Equal to t test
+```{r}
+Anova(mod3.lm)
+```
+
+## Stepwise Model
+
+```{r}
+null.lm <- lm(water81~1, data=concord)
+mod6.step <- step(null.lm,
+                  scope= ~income+water80+educat+retire+peop81+cpeop,
+                  direction="forward")
+summary(mod6.step)
+```
+
+Alternative stepwise specification
+
+```{r}
+mod7.step <- step(mod3.lm, scope=list(lower=null.lm, upper=mod3.lm), direction="backward")
+summary(mod7.step)
+```
+
+## Conditional Effects
+
+```{r}
+concord$clogpeop <- log(concord$peop81 / concord$peop80)
+mod08.lm <- lm(log(water81)~log(income)+log(water80)+educat+retire+log(peop81)+clogpeop, data=concord)
+summary(mod08.lm)
+```
+
+### All effects at mean level of remaing variavles
+
+```{r fig.height=8, fig.width=12}
+plot(allEffects(mod08.lm, transformation=list(link=log, inverse=exp)), ylab="water81")
+```
+
+### get value ranges
+
+```{r}
+summary(concord)
+summary(log(concord$water80))
+summary(log(concord$peop81))
+```
+
+### Income effect for a low consumer profile
+
+```{r fig.height=8, fig.width=12}
+plot(effect("log(income)", mod08.lm, given.values=c("log(water80)"=7.3, "educat"=18, "log(peop81)"=0.7),
+            transformation=list(link=log, inverse=exp) ), 
+     ylim=c(log(1000),log(6000)), ylab="water81", 
+     main="Income Effect of Low Water Consumer")
+```
+
+### Income effect for an average consumer profile
+
+```{r fig.height=8, fig.width=12}
+plot(effect("log(income)", mod08.lm, given.values=c("log(water80)"=7.7, "educat"=14, "log(peop81)"=1.0),
+            transformation=list(link=log, inverse=exp) ), 
+     ylim=c(log(1000),log(5000)), ylab="water81", 
+     main="Income Effect of Average Water Consumer")
+```
+
+### Income effect for a high consumer profile
+
+```{r fig.height=8, fig.width=12}
+plot(effect("log(income)", mod08.lm, given.values=c("log(water80)"=8.3, "educat"=10, "log(peop81)"=1.4),
+            transformation=list(link=log, inverse=exp) ), 
+     ylim=c(log(1000),log(5000)), ylab="water81", main="Income Effect of High Water Consumer")
+```
+
+# Factor Variable Analysis
+
+## Initialize Data
+
+```{r}
+wells <- foreign::read.spss("wells.sav",to.data.frame=TRUE)
+summary(wells)
+```
+
+## Explore Coding Scheme of Factors
+
+See coding of factor
+
+```{r}
+class(wells$deep)
+contrasts(wells$deep)
+```
+
+Change to 1,0,-1 coding
+
+```{r}
+contrasts(wells$deep) <- "contr.sum" 
+contrasts(wells$deep)
+```
+
+Change back to 0,1 coding
+
+```{r}
+contrasts(wells$deep) <- "contr.treatment"
+contrasts(wells$deep)
+```
+
+## Prepare data for analysis
+
+```{r}
+wells1 <- na.omit(wells)                               # drop observation 18 with missing values for Chlor
+wells1$logChlor <- log(wells1$chlor)                   # Transform to natural logarithm
+wells1$logDist <- log(wells1$droad)                    # Transform to natural logarithm
+(wells1$deepdum <- as.numeric(unclass(wells1$deep))-1)   # Convert factor to numeric 0/1 dummy
+attach(wells1)
+```
+
+```{r fig.height=8, fig.width=12}
+scatterplot(logChlor~logDist|deep, smooth=F, data=wells1)
+```
+
+Symbols & colors for well type
+
+```{r fig.height=8, fig.width=12}
+wellSymbol <- ifelse(deep==levels(deep)[1],15,16)
+wellCol <- ifelse(deep==levels(deep)[1],"red","blue")
+plot(droad,chlor, log="xy", pch=wellSymbol, col=wellCol)
+legend("topright",legend=c("shallow","deep"), 
+       title="Well Type:", col=c("red","blue"),pch=c(15,16))
+```
+
+## Linear Model for factor variables
+
+**No intercept Model**
+
+```{r}
+mod0 <- lm(logChlor ~ deep -1) # One way analysis of variance
+summary(mod0)             # Suppressing intercept gives mean levels
+```
+
+**intercept model**
+
+```{r}
+mod1 <- lm(logChlor ~ deep)   # One-way analysis of variance
+summary(mod1)
+```
+
+### Standard Regression
+
+```{r}
+mod2 <- lm(logChlor ~ logDist)
+summary(mod2)
+```
+
+```{r fig.height=8, fig.width=12}
+plot(logDist,logChlor,pch=wellSymbol,col=wellCol)      # just distance not interaction
+abline(mod2)
+legend("topright",legend=c("shallow","deep"), title="Well Type", col=c("red","blue"),pch=c(15,16))
+```
+
+### Regression with intercept dummy
+
+```{r}
+mod3 <- lm(logChlor ~ deep + logDist)
+summary(mod3)
+```
+
+```{r fig.height=8, fig.width=12}
+plot(logDist,logChlor,pch=wellSymbol,col=wellCol)      # intercept dummy
+abline(mod3$coef[1],mod3$coef[3],col="blue")
+abline(mod3$coef[1]+mod3$coef[2],mod3$coef[3],col="red")
+legend("topright",legend=c("shallow","deep"), title="Well Type", col=c("red","blue"),pch=c(15,16))
+```
+
+### Regression with slope dummy
+
+```{r}
+mod4 <- lm(logChlor ~ logDist + logDist:deep) 
+summary(mod4)
+```
+
+```{r fig.height=8, fig.width=12}
+plot(logDist,logChlor,pch=wellSymbol,col=wellCol)      # slope dummy
+abline(mod4$coef[1],mod4$coef[2],col="red")
+abline(mod4$coef[1],mod4$coef[2]+mod4$coef[3],col="blue")
+legend("topright",legend=c("shallow","deep"), title="Well Type", col=c("red","blue"),pch=c(15,16))
+```
+
+### Regression with intercept and slope dummy
+
+```{r}
+mod5 <- lm(logChlor ~ deep*logDist)
+summary(mod5)
+```
+
+```{r fig.height=8, fig.width=12}
+mod5 <- lm(logChlor ~ deep + logDist + logDist:deep) 
+plot(logDist,logChlor,pch=wellSymbol,col=wellCol)      # intercept and slope dummy
+abline(mod5$coef[1],mod5$coef[3],col="red")
+abline(mod5$coef[1]+mod5$coef[2],mod5$coef[3]+mod5$coef[4],col="blue")
+legend("topright",legend=c("shallow","deep"), title="Well Type", col=c("red","blue"),pch=c(15,16))
+```
+
+```{r}
+anova(mod2,mod5)
+```
+
