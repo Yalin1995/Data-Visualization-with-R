@@ -1,0 +1,278 @@
+---
+title: "Bivariate Regression Analysis"
+author: "Yalin Yang"
+date: "`r Sys.Date()`"
+output:
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+  html_document:
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
+    toc_float:
+      collapsed: no
+--- 
+
+# Quantile-Normal Plot
+
+## Initialize data
+
+```{r}
+## Data vector with ties in the last four elements
+x <- c(4.0,4.4,3.8,2.5,5.1,4.5,3.8,4.8,4.4,4.1)
+
+## Sorting
+( xSort <- sort(x) )   # works only on vectors
+```
+
+Re-ordering works on matrices and data-frames
+
+```{r}
+shuffle <- order(x)      # Order generates a shuffle index
+xOrdered <- x[shuffle]   # Shuffle data positions in vector
+(cbind(x, shuffle, xOrdered))
+```
+```{r}
+## Ranking data
+(xRank <- rank(x, ties.method="random"))      # Explore other methods
+```
+
+## Quantiles
+
+```{r}
+## quantiles Q[i](p) = (1 - z)*x[j] + z*x[j+1] with 0 <= z <= 1
+( quantile(xOrdered,prob=seq(0.1,0.9,by=0.1)) ) 
+( quantile(xOrdered,prob=c(0.25,0.5,0.75)) )    # Quartiles
+```
+
+## Quantile-Normal Plot
+
+Percentage (probability) points - for tied data use the larger percentile
+
+```{r}
+xPercent <- cbind("X-value"=xOrdered, "Percentile a=0.0"=ppoints(xOrdered,a=0.0),
+                  "Percentile a=0.5"=ppoints(xOrdered,a=0.5), 
+                  "Percentile a=1.0"=ppoints(xOrdered,a=1.0))
+round(xPercent, 2)
+```
+
+Empirical Distribution Function
+
+```{r fig.height=8, fig.width=12}
+summary(ecdf(x))
+plot(ecdf(x))
+```
+
+QQ plot
+
+```{r fig.height=8, fig.width=12, message=FALSE, warning=FALSE}
+car::qqPlot(x)
+```
+
+# Box Cox Transformation
+
+## Initialize data
+
+```{r}
+library(car)
+setwd("G:\\UTD_Classes\\2020Spring\\GISC7310_AdvancedDataAnalysis\\02Bivariate Regression Analysis")
+Concord <- foreign::read.spss("Concord1.sav",to.data.frame=TRUE)
+reg01 <- lm(water81~income, data=Concord)
+summary(reg01)
+```
+
+## Residual Analysis
+
+```{r fig.height=8, fig.width=12}
+hist(resid(reg01))
+```
+
+```{r}
+round(sum(resid(reg01)),14)
+cbind("Coef"=coef(reg01), confint(reg01, level=0.95))
+```
+
+Prediction and Observation
+
+### Line confidence interval & fit 
+
+```{r}
+predDf <- data.frame(income=min(Concord$income):
+          max(Concord$income))   # data-frame for independent vars
+(predDf <- data.frame(predDf, predict(reg01, 
+      newdata=predDf, interval="confidence", level=0.95)))[1:10,] # Line confidence interval & fit
+```
+
+```{r fig.height=8, fig.width=12}
+plot(water81~income,data=Concord)
+lines(predDf$income,predDf$fit,col="red")  # predicted value
+lines(predDf$income,predDf$lwr,col="green") # lower confidence interval limits
+lines(predDf$income,predDf$upr,col="green") # upper confidence interval limits
+abline(h=mean(Concord$water81),v=mean(Concord$income),lty=3)  # Regression line goes thru the means
+```
+
+### Point confidence interval & fit
+
+```{r}
+predDf <- data.frame(income=min(Concord$income):
+                       max(Concord$income))   # data-frame for independent vars
+(predDf <- data.frame(predDf, predict(reg01, 
+       newdata=predDf, interval="prediction", level=0.95)))[1:10,]  # Point confidence interval & fit
+```
+
+```{r fig.height=8, fig.width=12}
+plot(water81~income,data=Concord)
+lines(predDf$income,predDf$fit,col="red")   # predicted value
+lines(predDf$income,predDf$lwr,col="green") # lower confidence interval limits
+lines(predDf$income,predDf$upr,col="green") # upper confidence interval limits
+abline(h=mean(Concord$water81),
+       v=mean(Concord$income),lty=3) # Regression line goes thru the means
+```
+
+### Scatter Plot
+
+```{r fig.height=8, fig.width=12}
+car::scatterplot(water81~income, data=Concord, 
+                 main="Concord Households: Water Consumption against Income" )
+```
+
+**The residual variance is not constant and mean are not equal to 0**
+
+```{r fig.height=8, fig.width=12}
+plot(resid(reg01)~fitted(reg01))
+abline(h=0,col= "red")
+```
+
+# Box Cox Transformation
+
+## Initialize data
+
+```{r}
+setwd("G:\\UTD_Classes\\2020Spring\\GISC7310_AdvancedDataAnalysis\\02Bivariate Regression Analysis")  
+library(foreign); library(car)
+myPower <- read.spss("DallasTempPower.sav", to.data.frame= TRUE)
+
+myPower$powPerDay <- myPower$kWhBill/myPower$DaysBill # calculate kWh per day
+
+## Exploration
+summary(myPower)
+```
+
+```{r fig.height=8, fig.width=12}
+boxplot(powPerDay~Month, data=myPower)
+abline(h=mean(myPower$powPerDay, na.rm=TRUE), lty=5, col="red")
+```
+
+```{r fig.height=8, fig.width=12}
+boxplot(myPower[, c("MinTemp","AveTemp","MaxTemp")])
+```
+
+```{r fig.height=8, fig.width=12}
+hist(myPower$AveTemp, breaks=seq(40,100, by=5))
+```
+
+## Box Cox Transformation
+
+### Check normality
+
+```{r}
+e1071::skewness(myPower$powPerDay, na.rm=TRUE)
+```
+```{r fig.height=8, fig.width=12}
+car::qqPlot(myPower$powPerDay)
+```
+
+**Two methods for testing**
+
+```{r}
+shapiro.test(myPower$powPerDay)
+```
+
+```{r}
+ks.test(myPower$powPerDay, pnorm,                   # the ks test has not as much power
+        mean=mean(myPower$powPerDay), sd=sd(myPower$powPerDay))
+```
+
+### Find Box-Cox lambda
+
+Explore different lambda parameters
+
+```{r fig.height=8, fig.width=12}
+symbox(~powPerDay, data=myPower)
+```
+
+Test indicates log-transformation sufficient
+
+```{r}
+summary(powerTransform(lm(powPerDay~1, data=myPower)))
+```
+
+```{r message=FALSE, warning=FALSE}
+lambda <- powerTransform(lm(powPerDay~1, data=myPower))$lambda
+myPower$bc.powPerDay <- car::bcPower(myPower$powPerDay, lambda=lambda)
+e1071::skewness(myPower$bc.powPerDay)
+```
+```{r fig.height=8, fig.width=12}
+car::qqPlot(myPower$bc.powPerDay)
+```
+```{r}
+shapiro.test(myPower$bc.powPerDay) 
+```
+
+### Scatterplot with loess smoother
+
+```{r fig.height=8, fig.width=12}
+scatterplot(powPerDay~AveTemp, data=myPower)
+```
+
+## Simultaneously transform a set of variables 
+```{r}
+summary(lambda <- powerTransform(lm(cbind(powPerDay,AveTemp)~1, data=myPower)))
+myPower <- data.frame(myPower,bcPower(cbind(myPower$powPerDay,myPower$AveTemp), 
+                                      coef(lambda, round=T))) # add transformed variables to myPower
+```
+
+# Box Cox Transformation [Negative Values]
+
+## Z-Gamma Transformation
+
+```{r fig.height=8, fig.width=12}
+## Example of the z-Gamma transformation
+zGamma <- function(x, gamma){(x+sqrt(x^2+gamma^2))/2}
+x <- seq(-2,4, by=0.1)
+gamma <- 3
+zx <- zGamma(x, gamma)
+plot(x,zx, type="l", xlab="X with negative values", ylab="Transformed z(x)",
+     main="Box-Cox Family with Negative Values and Gamma=1")
+```
+
+## An positvely skewed distribution with small negative value
+
+```{r fig.height=8, fig.width=12}
+x <- rbeta(100, shape1=2, shape2=5)-0.1
+hist(x, main="Beta distribution with rbeta(100, shape1=2, shape2=5)-0.1")
+```
+
+### Use powerTransform
+
+```{r}
+summary(lambda <- powerTransform(x~1, family="bcnPower"))
+```
+
+### Z-Gamma Transformation
+
+```{r fig.height=8, fig.width=12}
+x <- sort(x)
+zx <- zGamma(x,coef(lambda)[2])
+plot(x,zx, type="l", xlab="X with negative values", ylab="Transformed z(x)",
+     main="Box-Cox Family with Negative Values and Gamma=0.713883")
+```
+
+### Box Cox Transformation
+
+```{r fig.height=8, fig.width=12}
+x.bcn <- bcnPower(x, lambda=coef(lambda)[1], gamma=coef(lambda)[2])
+hist(x.bcn, main="Box-Cox transformation with Negative Values")
+```
+
