@@ -15,5 +15,10 @@ Data Visualization with R
 * [R Code(pdf)](https://yalin1995.github.io/Data-Visualization-with-R/02Bivariate%20Regression%20Analysis/Lecture02.pdf)
 * [R Code(html)](https://yalin1995.github.io/Data-Visualization-with-R/02Bivariate%20Regression%20Analysis/Lecture02.html)
 
+###[Multiple Regression Analysis](https://yalin1995.github.io/Data-Visualization-with-R/03Multiple%20Regression%20Analysis/HamChapt03A.pdf)
+* [Interaction Effects](https://yalin1995.github.io/Data-Visualization-with-R/03Multiple%20Regression%20Analysis/HamChapt03B.pdf)
+* [R Code(pdf)](https://yalin1995.github.io/Data-Visualization-with-R/03Multiple%20Regression%20Analysis/Lecture03.pdf)
+* [R Code(html)](https://yalin1995.github.io/Data-Visualization-with-R/03Multiple%20Regression%20Analysis/Lecture03.html)
+
 ### [The Generalized Linear Model](https://yalin1995.github.io/Data-Visualization-with-R/08The%20Generalized%20Linear%20Model/GLMwithExtension.pdf)
 * [R Code(html)](https://yalin1995.github.io/Data-Visualization-with-R/08The%20Generalized%20Linear%20Model/Lecture08.html)
