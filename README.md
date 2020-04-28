@@ -10,7 +10,10 @@ Data Visualization with R
 * [R Code(pdf)](https://yalin1995.github.io/Data-Visualization-with-R/1.Population%20and%20Sampling%20Distributions/Lecture01.pdf)
 * [R Code(html)](https://yalin1995.github.io/Data-Visualization-with-R/1.Population%20and%20Sampling%20Distributions/Lecture01.html)
 
-### Bivariate Regression Analysis 
+### [Bivariate Regression Analysis](https://yalin1995.github.io/Data-Visualization-with-R/02Bivariate%20Regression%20Analysis/HamChapt02.pdf) 
+* [Univariate Variable Distributions](https://yalin1995.github.io/Data-Visualization-with-R/02Bivariate%20Regression%20Analysis/HamChapt01.pdf)
+* [R Code(pdf)](https://yalin1995.github.io/Data-Visualization-with-R/02Bivariate%20Regression%20Analysis/Lecture02.pdf)
+* [R Code(html)](https://yalin1995.github.io/Data-Visualization-with-R/02Bivariate%20Regression%20Analysis/Lecture02.html)
 
 ### [The Generalized Linear Model](https://yalin1995.github.io/Data-Visualization-with-R/08The%20Generalized%20Linear%20Model/GLMwithExtension.pdf)
 * [R Code(html)](https://yalin1995.github.io/Data-Visualization-with-R/08The%20Generalized%20Linear%20Model/Lecture08.html)
