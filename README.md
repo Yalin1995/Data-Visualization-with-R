@@ -20,5 +20,8 @@ Data Visualization with R
 * [R Code(pdf)](https://yalin1995.github.io/Data-Visualization-with-R/03Multiple%20Regression%20Analysis/Lecture03.pdf)
 * [R Code(html)](https://yalin1995.github.io/Data-Visualization-with-R/03Multiple%20Regression%20Analysis/Lecture03.html)
 
+### [Instrumental Variable Regression](https://yalin1995.github.io/Data-Visualization-with-R/04Instrumental%20Variable%20Regression/IVReg.pdf)
+* [R Code(pdf)](https://yalin1995.github.io/Data-Visualization-with-R/04Instrumental%20Variable%20Regression/Lecture04.pdf)
+* [R Code(html)](https://yalin1995.github.io/Data-Visualization-with-R/04Instrumental%20Variable%20Regression/Lecture04.html)
 ### [The Generalized Linear Model](https://yalin1995.github.io/Data-Visualization-with-R/08The%20Generalized%20Linear%20Model/GLMwithExtension.pdf)
 * [R Code(html)](https://yalin1995.github.io/Data-Visualization-with-R/08The%20Generalized%20Linear%20Model/Lecture08.html)
