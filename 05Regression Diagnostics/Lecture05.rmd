@@ -1,0 +1,142 @@
+---
+title: "Regression Diagnostics"
+author: "Yalin Yang"
+date: "`r Sys.Date()`"
+output:
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+  html_document:
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
+    toc_float:
+      collapsed: no
+--- 
+
+# Standard Regression Diagnositcs
+
+## Quick view of dataset
+
+Evaluate monthly cycle and variance heterogeneity
+
+```{r fig.height=8, fig.width=12}
+sandusky <- foreign::read.spss("SanduskyTemperature.sav", use.value.labels = TRUE, to.data.frame = TRUE)
+boxplot(avg7447~month, data=sandusky, ylab="Average Temperature in Fahrenheit", main="Sandusky Climate 1990-1999")
+```
+
+```{r fig.height=8, fig.width=12}
+plot(avg7447~time.idx, data=sandusky, main="Monthly Temperature Variation at Sandusky, Ohio, from 1990 to 1999",
+     xlab="Sequence in Months", ylab="Temperature", type="l")
+```
+
+## Generate harmonic variables and add them to the data-frame
+
+Fouier regression with 2 wave parameters
+
+```{r}
+sandusky$r.cos <- cos(sandusky$time.idx/12*2*pi)
+sandusky$r.sin <- sin(sandusky$time.idx/12*2*pi)
+fourier1.lm <- lm(avg7447~time.idx+r.cos+r.sin, data=sandusky)
+summary(fourier1.lm,cor=T)
+```
+
+Variance inflation factors (reported in variance NOT std)
+
+```{r message=FALSE, warning=FALSE}
+library(car)
+vif(fourier1.lm)
+```
+
+covariance among estimated parameters
+
+```{r}
+round(vcov(fourier1.lm),2) 
+```
+
+## Fixed effect panel model
+
+```{r}
+month.lm <- lm(avg7447~time.idx + month, data=sandusky)
+summary(month.lm)
+```
+
+## Diagnostic plots
+
+### Test of normality based on t-distribution
+
+```{r fig.height=8, fig.width=12, message=FALSE, warning=FALSE}
+qqPlot(fourier1.lm) 
+```
+
+### Partial effects plots
+
+```{r fig.height=8, fig.width=12}
+avPlots(fourier1.lm) 
+```
+
+### Residual plots (Tukey test)
+
+```{r fig.height=8, fig.width=12}
+residualPlots(fourier1.lm)
+```
+
+## Update the model by adding I(time.idx^2)
+
+```{r}
+fourier2.lm <- update(fourier1.lm, .~.+I(time.idx^2))
+summary(fourier2.lm)
+```
+
+recheck for non-linearity
+
+```{r}
+anova(fourier1.lm, fourier2.lm)
+```
+
+```{r fig.height=8, fig.width=12}
+residualPlots(fourier2.lm) 
+```
+
+## Get residuals
+
+```{r}
+(resid <- residuals(fourier2.lm))[1:10]
+(std.resid <- rstandard(fourier2.lm))[1:10]
+(student.resid <- rstudent(fourier2.lm))[1:10]
+```
+
+## Other diagnositic measures
+
+### DFBeta
+
+```{r fig.height=8, fig.width=12}
+dfbeta.values <- dfbetas(fourier2.lm)
+boxplot(dfbeta.values, main="dfBetas values")
+```
+
+### Cook distance
+
+```{r fig.height=8, fig.width=12}
+cook.values <- cooks.distance(fourier2.lm)
+boxplot(cook.values, main="cook-values")
+# boxplot(cook.values, main="cook-values", id.n=2)
+```
+
+### Leverage Plot
+
+```{r fig.height=8, fig.width=12}
+leverage.values <- hatvalues(fourier2.lm)
+boxplot(leverage.values, main="leverage values")
+```
+
+```{r fig.height=8, fig.width=12}
+car::influencePlot(fourier2.lm)
+```
+
+**Be careful: inspect scale of Bonferroni p-values**
+
+```{r fig.height=8, fig.width=12}
+car::influenceIndexPlot(fourier2.lm)
+```
+
