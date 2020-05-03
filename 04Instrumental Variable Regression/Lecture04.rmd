@@ -1,0 +1,234 @@
+---
+title: "Instrumental Variable Regression"
+author: "Yalin Yang"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
+    toc_float:
+      collapsed: no
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+--- 
+
+# Instrumental Variable Regression
+
+## Quickview of Dataset
+
+```{r message=FALSE, warning=FALSE}
+library(AER)
+mroz <- foreign::read.dta("http://fmwww.bc.edu/ec-p/data/wooldridge/mroz.dta")
+## Drop records without wage information
+mrozwage <- subset(mroz, !is.na(wage))
+```
+
+OLS slope $\beta_1 = Cov(y,x) / Var(x)$
+
+```{r}
+with(mrozwage, cov(log(wage),educ) / var(educ))
+```
+
+OLS with linear mode
+
+```{r}
+summary(lm(log(wage)~educ, data=mrozwage))
+```
+
+The correlation between the disturbuance and endogenous variable (One type of Heteroscedasticity)
+
+In this situation,we focous on the relationship between disturbuance and independent(endogenous) variable not dependent variable
+
+```{r}
+
+cor(log(mrozwage$wage) - mean(log(mrozwage$wage)), mrozwage$educ)
+
+```
+
+## Instrumental regression
+
+```{r}
+summary(ivreg(log(wage)~educ | fatheduc, data=mrozwage))
+```
+
+Manually apply 2SLS with augmented model
+
+* educ is an endogenous regressor
+* exper is an exogenous regressor
+* mother's and father's education are instruments for ability
+
+```{r fig.height=10, fig.width=15, message=FALSE, warning=FALSE}
+scatterplotMatrix(~log(wage)+exper+I(exper^2)+motheduc+fatheduc, data=mrozwage,
+                  pch=1, smooth=list(span = 0.35,lty.smooth=1, col.smooth="red", col.var="red"),
+                  regLine=list(col="green"))
+```
+
+### 1st stage
+
+Regression between endogenous and exogenous plus instruments
+[endogenous should be independent with exogenous but not instruments]
+```{r}
+stage1 <- lm(educ~exper+I(exper^2)+motheduc+fatheduc, data=mrozwage)
+summary(stage1)
+```
+
+### 2nd stage 
+With incorrect standard errors
+
+```{r}
+preEduc <- fitted(stage1)
+# preEduc <- residuals(stage1)
+stage2 <-lm(log(wage)~preEduc+exper+I(exper^2), data=mrozwage)
+summary(stage2)
+```
+
+### Biased OLS estimates
+
+```{r}
+summary(lm(log(wage)~educ+exper+I(exper^2), data=mrozwage))
+```
+
+### IV Reg model
+
+```{r}
+aut.2SLS<-ivreg(log(wage)~educ+exper+I(exper^2) |
+                          motheduc+fatheduc+exper+I(exper^2) , data=mrozwage)
+summary(aut.2SLS, diagnostics = TRUE)
+```
+
+### Partial F-test
+Test relevance of instruments (weak instruments) with partial F-test
+
+```{r}
+stage1.aux <- lm(educ~exper+I(exper^2), data=mrozwage)
+anova(stage1.aux,stage1)
+```
+
+### Modified Hausman test
+Test educ for endogeneity (see the coefficient for resid(stage1))
+
+```{r}
+res.2SLS <- lm(log(wage)~educ+exper+I(exper^2)+resid(stage1), data=mrozwage)
+coeftest(res.2SLS)
+```
+
+### Sargan test
+Test of exogeneity of instruments
+```{r}
+res.aux <- lm(resid(aut.2SLS) ~ motheduc+fatheduc+exper+I(exper^2) , data=mrozwage)
+(r2 <- summary(res.aux)$r.squared)
+(n <- nobs(res.aux))
+(teststat <- n*r2)
+(pval <- 1-pchisq(teststat, df=1))
+```
+
+# Chi-Square Test
+
+$\chi^2$ Test is very sensitive to the sample size if the sample size go larger, the significance for the Chi-Square Test would increase substantially (p-value would decrese)
+
+## Small sample size test
+
+```{r}
+(lowCount <- matrix(c(6,8,7,10),nrow=2))
+```
+
+```{r}
+(low.test <- chisq.test(lowCount, correct=F)) 
+```
+Low expected counts
+```{r}
+low.test$expected 
+```
+Get p-value through simulation
+```{r}
+chisq.test(lowCount, simulate.p.value=T) 
+```
+
+## Rescaling the sample size
+
+```{r}
+(hiCount <- lowCount*1000)
+```
+
+chi-square increased by 1000
+
+```{r}
+(hi.test <- chisq.test(hiCount, correct=F))
+```
+
+```{r}
+hi.test$expected 
+```
+
+```{r}
+chisq.test(hiCount, simulate.p.value=T) 
+```
+
+# Stock & Watson Smoking Dataset Modeling
+
+* Cross-sectional data for 48 contiguous U.S. states from 1985-1995
+* packpc: average number of packs sold per capita in a year
+* avgprs: average annual expenditure per person
+* income: average income/pop in $1000
+* taxs: proportion of sales tax on each package
+* tax: general sales tax rate. May depend on incomepp
+
+## Quick view of dataset
+
+```{r fig.height=10, fig.width=15}
+cig <- foreign::read.dta("http://fmwww.bc.edu/ec-p/data/stockwatson/cig85_95.dta")
+cig$incomepp <- cig$income/cig$pop
+cig <- cig[cig$year==1995,]
+
+scatterplotMatrix(~packpc+avgprs+incomepp, data=cig,
+                  pch=1, smooth=list(span = 0.35,lty.smooth=1, col.smooth="red", col.var="red"),
+                  regLine=list(col="green"))
+```
+
+**Log transformation**
+
+```{r fig.height=10, fig.width=15}
+scatterplotMatrix(~log(packpc)+log(avgprs)+log(incomepp), data=cig,
+                  pch=1, smooth=list(span = 0.35,lty.smooth=1, col.smooth="red", col.var="red"),
+                  regLine=list(col="green"))
+```
+
+## Regression Modeling
+
+Misspecified elasticity model without income
+
+```{r}
+cig.lm <- lm(log(packpc)~log(avgprs), data=cig)
+summary(cig.lm)
+```
+
+Income adjusted elasticity model
+
+```{r}
+cig.lm <- lm(log(packpc)~log(avgprs)+log(incomepp), data=cig)
+summary(cig.lm)
+```
+
+## IV Regression
+Evaluate first stage of IV regression
+```{r fig.height=8, fig.width=12}
+scatterplotMatrix(~log(avgprs)+tax+taxs, data=cig,
+         pch=1, smooth=list(span = 0.35,lty.smooth=1, col.smooth="red", col.var="red"),
+                  regLine=list(col="green"))
+```
+
+```{r}
+cig.rf <- lm(log(avgprs)~tax+taxs+log(incomepp), data=cig)
+summary(cig.rf)
+```
+
+2nd estimation
+
+```{r}
+cig.iv <-ivreg(log(packpc)~log(avgprs)+log(incomepp)|
+                     tax+taxs+log(incomepp), data=cig)
+summary(cig.iv, diagnostics=T)
+```
+
