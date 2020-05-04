@@ -5,6 +5,9 @@ Data Visualization with R
 ### Chapter2
 * [Scatter & Polyline Plot](https://yalin1995.github.io/Data-Visualization-with-R/Chapter2/Scatter&Polyline_plot.nb.html)
 
+## Mind Maps
+### [Content](http://www.xmind.net/m/YPLPR6)
+
 ## Labs
 ### 1. Lab01
 * [R Code(html)](https://yalin1995.github.io/Data-Visualization-with-R/Lab01/GISC7310Lab01.html)
