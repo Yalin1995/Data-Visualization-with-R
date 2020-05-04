@@ -12,6 +12,15 @@ Data Visualization with R
 ### 1. Lab01
 * [R Code(html)](https://yalin1995.github.io/Data-Visualization-with-R/Lab01/GISC7310Lab01.html)
 * [Sample Answer](https://yalin1995.github.io/Data-Visualization-with-R/Lab01/Lab01GISC7310SP2020%20Sample%20Answer.pdf)
+### 2. Lab02
+* [R Code(html)](https://yalin1995.github.io/Data-Visualization-with-R/Lab02/GISC7310Lab02.html)
+* [Sample Answer](https://yalin1995.github.io/Data-Visualization-with-R/Lab02/Lab02GISC7310SP2020%20Sample%20Answer(2).pdf)
+### 3. Lab03
+* [Sample Answer](https://yalin1995.github.io/Data-Visualization-with-R/Lab03/Lab03GISC7310Springl2020SampleAnswer.pdf)
+### 3. Lab04
+* [Sample Answer](https://yalin1995.github.io/Data-Visualization-with-R/Lab04/YalinLab04.pdf)
+### 3. Lab05
+* [Sample Answer](https://yalin1995.github.io/Data-Visualization-with-R/Lab05/Lab05GISC7310SampleAnswerSP2020(1).pdf)
 
 ## Chapters
 ### 1. [Population and Sampling Distributions](https://yalin1995.github.io/Data-Visualization-with-R/1.Population%20and%20Sampling%20Distributions/HamApp01.pdf)
