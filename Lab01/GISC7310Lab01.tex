@@ -1,0 +1,854 @@
+\PassOptionsToPackage{unicode=true}{hyperref} % options for packages loaded elsewhere
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provides euro and other symbols
+\else % if luatex or xelatex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\hypersetup{
+  pdftitle={Lab01: Data Transformations, Bivariate Regression Analysis, Numerical Integration \& Distributions},
+  pdfauthor={Yalin Yang},
+  pdfborder={0 0 0},
+  breaklinks=true}
+\urlstyle{same}  % don't use monospace font for urls
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{graphicx,grffile}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-2}
+% Redefines (sub)paragraphs to behave more like sections
+\ifx\paragraph\undefined\else
+  \let\oldparagraph\paragraph
+  \renewcommand{\paragraph}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+  \let\oldsubparagraph\subparagraph
+  \renewcommand{\subparagraph}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+
+% set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+
+
+\title{Lab01: Data Transformations, Bivariate Regression Analysis, Numerical
+Integration \& Distributions}
+\author{Yalin Yang}
+\date{2020-05-03}
+
+\begin{document}
+\maketitle
+
+{
+\setcounter{tocdepth}{3}
+\tableofcontents
+}
+\hypertarget{task-1}{%
+\section{Task 1}\label{task-1}}
+
+\textbf{Univariate Variable Exploration and Transformations {[}2
+points{]}}
+
+Use the CPS1985 dataset in the library AER to explore the distribution
+of the respondents' wage.
+
+\hypertarget{task-1.1}{%
+\subsection{Task 1.1}\label{task-1.1}}
+
+Find the best \(\lambda_{best}\)-value for the Box-Cox transformation
+(see summary(car::powerTransform(varName))). Could the
+log-transformation (i.e., \(\lambda=0.0\)) instead of \(\lambda^best\)
+be used? Justify your answer. {[}0.5 points{]}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(AER)}
+\KeywordTok{data}\NormalTok{(}\StringTok{"CPS1985"}\NormalTok{)}
+\KeywordTok{symbox}\NormalTok{(}\OperatorTok{~}\NormalTok{wage, }\DataTypeTok{data=}\NormalTok{CPS1985)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{GISC7310Lab01_files/figure-latex/unnamed-chunk-1-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{summary}\NormalTok{(}\KeywordTok{powerTransform}\NormalTok{(}\KeywordTok{lm}\NormalTok{(wage}\OperatorTok{~}\DecValTok{1}\NormalTok{, }\DataTypeTok{data=}\NormalTok{CPS1985)))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## bcPower Transformation to Normality 
+##    Est Power Rounded Pwr Wald Lwr Bnd Wald Upr Bnd
+## Y1   -0.0658           0      -0.1997        0.068
+## 
+## Likelihood ratio test that transformation parameter is equal to 0
+##  (log transformation)
+##                             LRT df    pval
+## LR test, lambda = (0) 0.9245772  1 0.33628
+## 
+## Likelihood ratio test that no transformation is needed
+##                            LRT df       pval
+## LR test, lambda = (1) 232.5055  1 < 2.22e-16
+\end{verbatim}
+
+The estimated transformation power (\(\lambda = -0.0658\)), which is
+very close to 0. The p-value of the likelihood ratio test (H0: \lambda =
+0 ) is larger than 0.05, so we fail to reject the null hypothesis.
+Instead of using (\(\lambda = -0.0658\)), the log-transformation should
+be used in this case.
+
+\hypertarget{task-1.2}{%
+\subsection{Task 1.2}\label{task-1.2}}
+
+For the untransformed (\(\lambda = 1\)), optimal
+(\(\lambda = \lambda𝑏𝑒𝑠𝑡\) ) and over-adjusted (\lambda = -1 ) Box-Cox
+transformed wage variable repeat the following tasks and comparatively
+interpret the results:
+
+{[}a{]} Draw properly constructed histograms of all three distributions
+and discuss their properties
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{par}\NormalTok{(}\DataTypeTok{mfrow =} \KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{3}\NormalTok{))}
+\KeywordTok{hist}\NormalTok{(car}\OperatorTok{::}\KeywordTok{bcPower}\NormalTok{(CPS1985}\OperatorTok{$}\NormalTok{wage, }\DataTypeTok{lambda=}\DecValTok{1}\NormalTok{),}\DataTypeTok{breaks =} \DecValTok{12}\NormalTok{,}\DataTypeTok{main =} \StringTok{'lambda = 1'}\NormalTok{,}\DataTypeTok{xlab =} \StringTok{'x'}\NormalTok{)}
+\KeywordTok{hist}\NormalTok{(car}\OperatorTok{::}\KeywordTok{bcPower}\NormalTok{(CPS1985}\OperatorTok{$}\NormalTok{wage, }\DataTypeTok{lambda=} \FloatTok{-0.0658}\NormalTok{ ),}\DataTypeTok{breaks =} \DecValTok{12}\NormalTok{,}\DataTypeTok{main =} \StringTok{'lambda = -0.0658'}\NormalTok{,}\DataTypeTok{xlab =} \StringTok{'x'}\NormalTok{)}
+\KeywordTok{hist}\NormalTok{(car}\OperatorTok{::}\KeywordTok{bcPower}\NormalTok{(CPS1985}\OperatorTok{$}\NormalTok{wage, }\DataTypeTok{lambda=} \FloatTok{-1.5}\NormalTok{ ),}\DataTypeTok{breaks =} \DecValTok{12}\NormalTok{,}\DataTypeTok{main =} \StringTok{'lambda = -1.5'}\NormalTok{,}\DataTypeTok{xlab =} \StringTok{'x'}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{GISC7310Lab01_files/figure-latex/unnamed-chunk-3-1.pdf}
+\textbf{\(\lambda=1\) are positively skewed, \(\lambda=-0.068\) are
+close to the normal distribution with little positive skewness.
+\(\lambda=-1.5\) are highly negatively skewed.}
+
+{[}b{]} evaluate their sknewness
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{skew1 <-}\StringTok{ }\NormalTok{e1071}\OperatorTok{::}\KeywordTok{skewness}\NormalTok{(car}\OperatorTok{::}\KeywordTok{bcPower}\NormalTok{(CPS1985}\OperatorTok{$}\NormalTok{wage, }\DataTypeTok{lambda=}\DecValTok{1}\NormalTok{))}
+\NormalTok{skew2 <-}\StringTok{ }\NormalTok{e1071}\OperatorTok{::}\KeywordTok{skewness}\NormalTok{(car}\OperatorTok{::}\KeywordTok{bcPower}\NormalTok{(CPS1985}\OperatorTok{$}\NormalTok{wage, }\DataTypeTok{lambda=}\OperatorTok{-}\FloatTok{0.0658}\NormalTok{))}
+\NormalTok{skew3 <-}\StringTok{ }\NormalTok{e1071}\OperatorTok{::}\KeywordTok{skewness}\NormalTok{(car}\OperatorTok{::}\KeywordTok{bcPower}\NormalTok{(CPS1985}\OperatorTok{$}\NormalTok{wage, }\DataTypeTok{lambda=}\OperatorTok{-}\FloatTok{1.5}\NormalTok{))}
+\KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{skews =} \KeywordTok{c}\NormalTok{(skew1,skew2,skew3))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##          skews
+## 1  1.687762093
+## 2  0.001027028
+## 3 -7.310307169
+\end{verbatim}
+
+{[}c{]} test whether the variables are approximately normal distributed
+(see \texttt{shapiro.test(\ )}).
+
+Address also the questions: Which transformed variable comes closest to
+the normal distribution? Is the transformation with \(\lambda = -1.5\)
+over-compensating the inherent positive skewness in the wage
+variable?{[}1.5 points{]}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{shapiro.test}\NormalTok{(car}\OperatorTok{::}\KeywordTok{bcPower}\NormalTok{(CPS1985}\OperatorTok{$}\NormalTok{wage, }\DataTypeTok{lambda=}\DecValTok{1}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+##  Shapiro-Wilk normality test
+## 
+## data:  car::bcPower(CPS1985$wage, lambda = 1)
+## W = 0.8673, p-value < 2.2e-16
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{shapiro.test}\NormalTok{(car}\OperatorTok{::}\KeywordTok{bcPower}\NormalTok{(CPS1985}\OperatorTok{$}\NormalTok{wage, }\DataTypeTok{lambda=}\OperatorTok{-}\FloatTok{0.0658}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+##  Shapiro-Wilk normality test
+## 
+## data:  car::bcPower(CPS1985$wage, lambda = -0.0658)
+## W = 0.98923, p-value = 0.000586
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{shapiro.test}\NormalTok{(car}\OperatorTok{::}\KeywordTok{bcPower}\NormalTok{(CPS1985}\OperatorTok{$}\NormalTok{wage, }\DataTypeTok{lambda=}\OperatorTok{-}\FloatTok{1.5}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+##  Shapiro-Wilk normality test
+## 
+## data:  car::bcPower(CPS1985$wage, lambda = -1.5)
+## W = 0.59422, p-value < 2.2e-16
+\end{verbatim}
+
+The untransformed wage variable has positive skewness with an outlier
+\$44500. The optimal transformation makes the transformed distribution
+almost symmetric with a tiny skewness value. However, the positive
+skewness is over-compensated when using (\(\lambda = -1.5\)). This leads
+to substantial negative skewness
+
+The p-values of Shapiro-Wilk normality tests with
+\(H_0 : X\)\textasciitilde{}\(N(\hat{\mu},\hat{\sigma^2})\) for the
+properly Box-Cox transformed data is much smaller than 0.05, therefore
+transformed wage still deviates from the normal distribution. However,
+this p-value is the largest one among all three scenarios. Therefore, we
+can conclude the optimal transformed variable becomes closest to the
+normal distribution.
+
+\hypertarget{task-2}{%
+\section{Task 2}\label{task-2}}
+
+\textbf{Explore the function powerTransform to achieve a multivariate
+normal distribution {[}1 point{]}}
+
+\hypertarget{task-2.1}{%
+\subsection{Task 2.1}\label{task-2.1}}
+
+\textbf{Simultaneously} estimate the optimal set of Box-Cox
+transformation parameters for all variables so that the set transformed
+variables becomes approximately multivariate normal distributed. Report
+your code to do the estimation. {[}0.5 points{]}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Concord <-}\StringTok{ }\NormalTok{foreign}\OperatorTok{::}\KeywordTok{read.spss}\NormalTok{(}\StringTok{"Concord1.sav "}\NormalTok{, }\DataTypeTok{to.data.frame=} \OtherTok{TRUE}\NormalTok{)}
+\NormalTok{Concord <-}\StringTok{ }\KeywordTok{na.omit}\NormalTok{(Concord)}
+\KeywordTok{summary}\NormalTok{(lambda <-}\StringTok{ }\KeywordTok{powerTransform}\NormalTok{(}\KeywordTok{lm}\NormalTok{(}\KeywordTok{cbind}\NormalTok{(water79,water80,water81)}\OperatorTok{~}\DecValTok{1}\NormalTok{, }\DataTypeTok{data=}\NormalTok{Concord)))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## bcPower Transformations to Multinormality 
+##         Est Power Rounded Pwr Wald Lwr Bnd Wald Upr Bnd
+## water79    0.1651        0.17       0.0824       0.2478
+## water80    0.1782        0.18       0.1005       0.2558
+## water81    0.2717        0.33       0.2022       0.3412
+## 
+## Likelihood ratio test that transformation parameters are equal to 0
+##  (all log transformations)
+##                                LRT df       pval
+## LR test, lambda = (0 0 0) 77.71615  3 < 2.22e-16
+## 
+## Likelihood ratio test that no transformations are needed
+##                                LRT df       pval
+## LR test, lambda = (1 1 1) 716.6848  3 < 2.22e-16
+\end{verbatim}
+
+p-values for transformation vectors (\(\lambda = 0,0,0\)), i.e., perform
+a log-transformation on all variables, and (\(\lambda = 1,1,1\)), i.e.,
+leave all variables untransformed, are much smaller than 𝛼 = 0.05 so we
+can reject the two null hypotheses assuming these sets of transformation
+parameters lead to a multivariate normal distribution for the set of
+variables. The estimated transformation vector
+(\(\lambda = 0.17, 0.18, 0.33\)) comes the closest to the multivariate
+normal distribution.
+
+\hypertarget{task-2.2}{%
+\subsection{Task 2.2}\label{task-2.2}}
+
+Show the output and interpret the results. {[}0.5 points{]}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Concord <-}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(Concord,                      }\CommentTok{# add transformed variables to myPower}
+                      \KeywordTok{bcPower}\NormalTok{(}\KeywordTok{cbind}\NormalTok{(Concord}\OperatorTok{$}\NormalTok{water79,Concord}\OperatorTok{$}\NormalTok{water80,Concord}\OperatorTok{$}\NormalTok{water81), }\KeywordTok{coef}\NormalTok{(lambda, }\DataTypeTok{round=}\NormalTok{T)))}
+\KeywordTok{par}\NormalTok{(}\DataTypeTok{mfrow =} \KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{3}\NormalTok{))}
+\KeywordTok{hist}\NormalTok{(Concord}\OperatorTok{$}\NormalTok{Z1.}\FloatTok{0.17}\NormalTok{,}\DataTypeTok{breaks =} \DecValTok{12}\NormalTok{,}\DataTypeTok{main =} \KeywordTok{paste}\NormalTok{(}\StringTok{'Water79 , Skewness ='}\NormalTok{,}\KeywordTok{round}\NormalTok{(e1071}\OperatorTok{::}\KeywordTok{skewness}\NormalTok{(Concord}\OperatorTok{$}\NormalTok{Z1.}\FloatTok{0.17}\NormalTok{),}\DecValTok{2}\NormalTok{)),}\DataTypeTok{xlab =} \StringTok{'x'}\NormalTok{)}
+\KeywordTok{hist}\NormalTok{(Concord}\OperatorTok{$}\NormalTok{Z2.}\FloatTok{0.18}\NormalTok{,}\DataTypeTok{breaks =} \DecValTok{12}\NormalTok{,}\DataTypeTok{main =} \KeywordTok{paste}\NormalTok{(}\StringTok{'Water80 , Skewness ='}\NormalTok{,}\KeywordTok{round}\NormalTok{(e1071}\OperatorTok{::}\KeywordTok{skewness}\NormalTok{(Concord}\OperatorTok{$}\NormalTok{Z2.}\FloatTok{0.18}\NormalTok{),}\DecValTok{2}\NormalTok{)),}\DataTypeTok{xlab =} \StringTok{'x'}\NormalTok{)}
+\KeywordTok{hist}\NormalTok{(Concord}\OperatorTok{$}\NormalTok{Z3.}\FloatTok{0.33}\NormalTok{,}\DataTypeTok{breaks =} \DecValTok{12}\NormalTok{,}\DataTypeTok{main =} \KeywordTok{paste}\NormalTok{(}\StringTok{'Water81 , Skewness ='}\NormalTok{,}\KeywordTok{round}\NormalTok{(e1071}\OperatorTok{::}\KeywordTok{skewness}\NormalTok{(Concord}\OperatorTok{$}\NormalTok{Z3.}\FloatTok{0.33}\NormalTok{),}\DecValTok{2}\NormalTok{)),}\DataTypeTok{xlab =} \StringTok{'x'}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{GISC7310Lab01_files/figure-latex/unnamed-chunk-7-1.pdf}
+
+\hypertarget{task-3}{%
+\section{Task 3}\label{task-3}}
+
+\textbf{Confidence Intervals {[}2 points{]}} Continue with the CPS1985
+dataset for this task. To simplify things do not perform variable
+transformations.
+
+\hypertarget{task-3.1}{%
+\subsection{Task 3.1}\label{task-3.1}}
+
+Run a \textbf{bivariate regression} of wage (dependent variable) on
+education (independent variable) and \textbf{interpret} the model
+estimates. {[}0.5 points{]}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{reg01 <-}\StringTok{ }\KeywordTok{lm}\NormalTok{(wage}\OperatorTok{~}\NormalTok{education, }\DataTypeTok{data=}\NormalTok{CPS1985)}
+\KeywordTok{summary}\NormalTok{(reg01)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Call:
+## lm(formula = wage ~ education, data = CPS1985)
+## 
+## Residuals:
+##    Min     1Q Median     3Q    Max 
+## -7.911 -3.260 -0.760  2.240 34.740 
+## 
+## Coefficients:
+##             Estimate Std. Error t value Pr(>|t|)    
+## (Intercept) -0.74598    1.04545  -0.714    0.476    
+## education    0.75046    0.07873   9.532   <2e-16 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 4.754 on 532 degrees of freedom
+## Multiple R-squared:  0.1459, Adjusted R-squared:  0.1443 
+## F-statistic: 90.85 on 1 and 532 DF,  p-value: < 2.2e-16
+\end{verbatim}
+
+The \(R^2\) is only 0.1459 which means only about 14.6\% of the
+variation in the dependent variable wage can be explained by the
+independent variable education. The statistically significant slope (H0:
+𝛽1 = 0 ) is positive meaning with each additional year of education the
+income will increase the hourly wages by \$0.75. While the intercept is
+not statistically different from zero, it should be keep in the model
+because {[}a{]} there is no logical reason why a person without
+education may have zero wages, and {[}b{]} because otherwise some
+statistics of the OLS model, such as the 𝑅2 lose their properties.
+
+\hypertarget{task-3.2}{%
+\subsection{Task 3.2}\label{task-3.2}}
+
+Calculate the 99 \% confidence intervals around the estimated regression
+parameters. Can you draw the same conclusion as you did using the
+\textbf{t-test} in the summary output of task 3.1? {[}0.5 points{]}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{cbind}\NormalTok{(}\StringTok{"Coef"}\NormalTok{=}\KeywordTok{coef}\NormalTok{(reg01), }\KeywordTok{confint}\NormalTok{(reg01, }\DataTypeTok{level=}\FloatTok{0.99}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##                   Coef     0.5 %    99.5 %
+## (Intercept) -0.7459797 -3.448585 1.9566260
+## education    0.7504608  0.546926 0.9539955
+\end{verbatim}
+
+The t-test investigates the null hypotheses that the estimated
+regression parameters are zero. That is, H0: 𝛽0 = 0 for the intercept
+and H0: 𝛽1 = 0 for the slope. As long as the 1 - 𝛼 confidence intervals
+cover the values under the null hypothesis, that is 𝛽0 = 0 and 𝛽1 = 0,
+the null hypothesis cannot be rejected with an error probability of 𝛼.
+
+\hypertarget{task-3.3}{%
+\subsection{Task 3.3}\label{task-3.3}}
+
+\textbf{Scatterplot} both variables and add the predicted regression
+line as well as the lower and upper 90\% confidence interval lines
+around the \textbf{point predictions}.(i.e., prediction interval in
+Hamilton and interval=``prediction'' in the predict function).
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(ggplot2)}
+\KeywordTok{attach}\NormalTok{(CPS1985)}
+\NormalTok{Pred <-}\StringTok{ }\KeywordTok{predict}\NormalTok{(reg01, }\DataTypeTok{interval=}\StringTok{"prediction"}\NormalTok{, }\DataTypeTok{level =} \FloatTok{0.90}\NormalTok{)}
+\NormalTok{CPS1985_new <-}\StringTok{ }\KeywordTok{cbind}\NormalTok{(CPS1985,Pred)}
+\NormalTok{q <-}\StringTok{ }\KeywordTok{ggplot}\NormalTok{(CPS1985_new,}\KeywordTok{aes}\NormalTok{(education,wage)) }\OperatorTok{+}\StringTok{ }\KeywordTok{geom_point}\NormalTok{() }\OperatorTok{+}\StringTok{ }
+\StringTok{  }\KeywordTok{geom_line}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{y=}\NormalTok{lwr), }\DataTypeTok{color =} \StringTok{"blue"}\NormalTok{, }\DataTypeTok{linetype =} \StringTok{"dashed"}\NormalTok{)}\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_line}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{y=}\NormalTok{upr), }\DataTypeTok{color =} \StringTok{"blue"}\NormalTok{, }\DataTypeTok{linetype =} \StringTok{"dashed"}\NormalTok{)}
+\NormalTok{q <-}\StringTok{ }\NormalTok{q }\OperatorTok{+}\StringTok{ }\KeywordTok{geom_vline}\NormalTok{(}\DataTypeTok{xintercept =}\KeywordTok{mean}\NormalTok{(education),}\DataTypeTok{color =} \StringTok{"red"}\NormalTok{) }\OperatorTok{+}\StringTok{ }
+\StringTok{  }\KeywordTok{geom_hline}\NormalTok{(}\DataTypeTok{yintercept =}\KeywordTok{mean}\NormalTok{(wage),}\DataTypeTok{color =} \StringTok{"red"}\NormalTok{)}
+\NormalTok{(q }\OperatorTok{+}\StringTok{ }\KeywordTok{ggtitle}\NormalTok{(}\StringTok{'CPS1985:Education Level against Wage'}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{GISC7310Lab01_files/figure-latex/unnamed-chunk-10-1.pdf}
+
+\hypertarget{task-4}{%
+\section{Task 4}\label{task-4}}
+
+\textbf{Calibration and Prediction of a Bivariate Regression Model with
+Skewed Variables {[}3 points{]}}
+
+The DBASE file CampusCrime.dbf has among other variables the count
+variables crime (number of crimes committed on university campuses) and
+police (size of the campuses police forces).
+
+\hypertarget{task-4.1}{%
+\subsection{Task 4.1}\label{task-4.1}}
+
+Plot \texttt{police} in dependence of \texttt{crime} including their
+box-plots along the margins. Is a data transformation advisable?
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Crime <-}\StringTok{ }\NormalTok{foreign}\OperatorTok{::}\KeywordTok{read.dbf}\NormalTok{(}\StringTok{"CampusCrime.dbf"}\NormalTok{ )}
+\KeywordTok{scatterplot}\NormalTok{(police }\OperatorTok{~}\StringTok{ }\NormalTok{crime , }\DataTypeTok{data =}\NormalTok{ Crime,}\DataTypeTok{pch=}\DecValTok{1}\NormalTok{, }\DataTypeTok{smooth=}\KeywordTok{list}\NormalTok{(}\DataTypeTok{span =} \FloatTok{0.35}\NormalTok{,}\DataTypeTok{lty.smooth=}\DecValTok{1}\NormalTok{, }\DataTypeTok{col.smooth=}\StringTok{"red"}\NormalTok{, }\DataTypeTok{col.var=}\StringTok{"red"}\NormalTok{),}
+                  \DataTypeTok{regLine=}\KeywordTok{list}\NormalTok{(}\DataTypeTok{col=}\StringTok{"green"}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{GISC7310Lab01_files/figure-latex/unnamed-chunk-11-1.pdf}
+
+The dependent variable police and the independent variable crime should
+be transformed because both are positively skewed. Furthermore, the
+residuals of the linear regression model are also slightly positively
+skewed. To make sure the residuals satisfy the assumption of ordinary
+least squares, it is advisable that both variables are transformed
+
+\hypertarget{task-4.2}{%
+\subsection{Task 4.2}\label{task-4.2}}
+
+Find a proper transformation of both variables in a way that the
+independent variable crime is approximately symmetrically distributed
+and that the transformation of the dependent variable police leads to
+approximately symmetrically distributed regression residuals.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{summary}\NormalTok{(}\KeywordTok{powerTransform}\NormalTok{(}\KeywordTok{lm}\NormalTok{(crime}\OperatorTok{~}\DecValTok{1}\NormalTok{, }\DataTypeTok{data=}\NormalTok{Crime)))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning in model.matrix.default(mt, mf, contrasts): non-list contrasts argument
+## ignored
+\end{verbatim}
+
+\begin{verbatim}
+## bcPower Transformation to Normality 
+##    Est Power Rounded Pwr Wald Lwr Bnd Wald Upr Bnd
+## Y1    0.0258           0      -0.1444        0.196
+## 
+## Likelihood ratio test that transformation parameter is equal to 0
+##  (log transformation)
+##                              LRT df    pval
+## LR test, lambda = (0) 0.08843754  1 0.76617
+## 
+## Likelihood ratio test that no transformation is needed
+##                            LRT df       pval
+## LR test, lambda = (1) 107.9414  1 < 2.22e-16
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{summary}\NormalTok{(}\KeywordTok{powerTransform}\NormalTok{((}\KeywordTok{lm}\NormalTok{(police}\OperatorTok{~}\KeywordTok{log}\NormalTok{(crime), }\DataTypeTok{data=}\NormalTok{Crime))))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning in model.matrix.default(mt, mf, contrasts): non-list contrasts argument
+## ignored
+\end{verbatim}
+
+\begin{verbatim}
+## bcPower Transformation to Normality 
+##    Est Power Rounded Pwr Wald Lwr Bnd Wald Upr Bnd
+## Y1   -0.0051           0      -0.2474       0.2372
+## 
+## Likelihood ratio test that transformation parameter is equal to 0
+##  (log transformation)
+##                               LRT df    pval
+## LR test, lambda = (0) 0.001726968  1 0.96685
+## 
+## Likelihood ratio test that no transformation is needed
+##                            LRT df       pval
+## LR test, lambda = (1) 63.30872  1 1.7764e-15
+\end{verbatim}
+
+The suggested lambda parameters are \(\lambda = 0.0258\) for the
+independent variable and \(\lambda = -.0051\) for the regression model
+lm(police\textasciitilde{}log(crime), data=crime) so that the residuals
+are approximately normal or at least symmetrically distributed.
+
+\hypertarget{task-4.3}{%
+\subsection{Task 4.3}\label{task-4.3}}
+
+Test whether a log-transformation (i.e., \(\lambda = 0\)) is appropriate
+for the dependent and the independent variables If the
+log-transformation is appropriate then use it because their relationship
+can now be interpreted in terms of elasticities.
+
+The likelihood ratio tests in task 4.2 suggests that the estimated
+lambda coefficients are not significantly different from zero.
+Therefore, both crime and police can be log-transformed.
+
+\hypertarget{task-4.4}{%
+\subsection{Task 4.4}\label{task-4.4}}
+
+Estimate the model in the transformed system and interpret the
+estimates. Also test if the elasticity (i.e., slope parameter) differs
+significantly from the neutral elasticity of 1, i.e., H0: 𝛽1 = 1. This
+could be done manually by using 𝛽1's standard error from the regression
+output or by using the function \texttt{car::linearHypothesis}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{elast.lm <-}\StringTok{ }\KeywordTok{lm}\NormalTok{(}\KeywordTok{log}\NormalTok{(police)}\OperatorTok{~}\KeywordTok{log}\NormalTok{(crime), }\DataTypeTok{data=}\NormalTok{Crime)}
+\KeywordTok{summary}\NormalTok{(elast.lm)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Call:
+## lm(formula = log(police) ~ log(crime), data = Crime)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -1.4893 -0.2910 -0.0575  0.3301  1.3459 
+## 
+## Coefficients:
+##             Estimate Std. Error t value Pr(>|t|)    
+## (Intercept)  0.27907    0.23950   1.165    0.247    
+## log(crime)   0.46573    0.04326  10.766   <2e-16 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 0.4793 on 91 degrees of freedom
+## Multiple R-squared:  0.5602, Adjusted R-squared:  0.5554 
+## F-statistic: 115.9 on 1 and 91 DF,  p-value: < 2.2e-16
+\end{verbatim}
+
+Since the bivariate regression model is specified in the log-log form,
+the results can be interpreted in terms of elasticity. One percent
+change in the number of crimes committed on university campuses will
+lead to 0.47 percent change in the size of the campuses police forces.
+The meaningful null hypothesis for elasticity is that 1\% in the
+independent variable will lead to 1\% change in the dependent variable.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{## Test for H0: beta_log(crime)=1}
+\NormalTok{slope <-}\StringTok{ }\KeywordTok{coef}\NormalTok{(elast.lm)[}\DecValTok{2}\NormalTok{]}
+\NormalTok{se <-}\StringTok{ }\KeywordTok{summary}\NormalTok{(elast.lm)}\OperatorTok{$}\NormalTok{coefficients[}\DecValTok{2}\NormalTok{, }\DecValTok{2}\NormalTok{]}
+\NormalTok{df <-}\StringTok{ }\KeywordTok{nrow}\NormalTok{(Crime) }\OperatorTok{-}\StringTok{ }\DecValTok{2}
+\NormalTok{(t.value <-}\StringTok{ }\NormalTok{(slope}\DecValTok{-1}\NormalTok{)}\OperatorTok{/}\NormalTok{se) }\CommentTok{# Note E(slope)=1 under H0}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## log(crime) 
+##  -12.35116
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DecValTok{2}\OperatorTok{*}\KeywordTok{pt}\NormalTok{(}\OperatorTok{-}\KeywordTok{abs}\NormalTok{(t.value),}\DataTypeTok{df =}\NormalTok{ df)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##   log(crime) 
+## 3.686307e-21
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{## Alternative approach. Note: F == t.value^2}
+\KeywordTok{linearHypothesis}\NormalTok{(elast.lm, }\KeywordTok{c}\NormalTok{(}\StringTok{"log(crime) = 1"}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Linear hypothesis test
+## 
+## Hypothesis:
+## log(crime) = 1
+## 
+## Model 1: restricted model
+## Model 2: log(police) ~ log(crime)
+## 
+##   Res.Df    RSS Df Sum of Sq      F    Pr(>F)    
+## 1     92 55.962                                  
+## 2     91 20.910  1    35.052 152.55 < 2.2e-16 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+\end{verbatim}
+
+The p value is virtually zero for this test, thus we can reject this
+null hypothesis H0: 𝛽 = 1. The elasticity 0.46573 of the regression
+model is significantly different from unity, which means the relative
+change of police is much less elastic than the relative change of crime.
+Ultimately it means that the relationship exhibits decreasing rates of
+law enforcement allocation. Notice: This is a two-sided test. Thus the
+p-value needs to be doubled when you look up the table for only one
+tail. The F-statistic of the linearHypothesis( ) function is equal to
+the squared t-value.
+
+\hypertarget{task-4.5}{%
+\subsection{Task 4.5}\label{task-4.5}}
+
+Perform a prediction in the original data units and plot the
+\textbf{median} and \textbf{expectation} curves. Interpret the plot both
+in terms of the median and expectation curves.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{bcReverseMedian <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(y, lambda)\{}
+\CommentTok{##  }
+\CommentTok{## Predicted Median of Reverse Box-Cox Transformation}
+\CommentTok{##}
+  \ControlFlowTok{if}\NormalTok{ (}\KeywordTok{abs}\NormalTok{(lambda) }\OperatorTok{<}\StringTok{ }\FloatTok{1.0E-6}\NormalTok{)                                         }\CommentTok{#1.0E-6 matches bcPower=0}
+\NormalTok{    rev.med <-}\StringTok{ }\KeywordTok{exp}\NormalTok{(y) }\ControlFlowTok{else}
+\NormalTok{    rev.med <-}\StringTok{ }\NormalTok{(lambda}\OperatorTok{*}\NormalTok{y}\OperatorTok{+}\DecValTok{1}\NormalTok{)}\OperatorTok{^}\NormalTok{(}\DecValTok{1}\OperatorTok{/}\NormalTok{lambda)}
+  \KeywordTok{return}\NormalTok{(rev.med)}
+\NormalTok{\} }\CommentTok{# end:revBoxCoxMed}
+
+\NormalTok{bcReverseExpectation <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(y, lambda, sigma)\{}
+\CommentTok{##}
+\CommentTok{## Predicted Expectation of Reverse Box-Cox Transformation}
+\CommentTok{##}
+  \ControlFlowTok{if}\NormalTok{ (}\KeywordTok{abs}\NormalTok{(lambda) }\OperatorTok{<}\StringTok{ }\FloatTok{1.0E-6}\NormalTok{)                                         }\CommentTok{#1.0E-6 matches bcPower=0 }
+\NormalTok{    rev.exp <-}\StringTok{ }\KeywordTok{exp}\NormalTok{(y}\FloatTok{+0.5}\OperatorTok{*}\NormalTok{sigma) }\ControlFlowTok{else}
+\NormalTok{    rev.exp <-}\StringTok{ }\NormalTok{(lambda}\OperatorTok{*}\NormalTok{y}\OperatorTok{+}\DecValTok{1}\NormalTok{)}\OperatorTok{^}\NormalTok{(}\DecValTok{1}\OperatorTok{/}\NormalTok{lambda)}\OperatorTok{*}\NormalTok{(}\DecValTok{1}\FloatTok{+0.5}\OperatorTok{*}\NormalTok{sigma}\OperatorTok{*}\NormalTok{(}\DecValTok{1}\OperatorTok{-}\NormalTok{lambda)}\OperatorTok{/}\NormalTok{(lambda}\OperatorTok{*}\NormalTok{y}\OperatorTok{+}\DecValTok{1}\NormalTok{)}\OperatorTok{^}\DecValTok{2}\NormalTok{)}
+  \KeywordTok{return}\NormalTok{(rev.exp)}
+\NormalTok{\} }\CommentTok{# end:bcRevExp}
+
+\NormalTok{plotBoxCox <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(y, x, ylambda, xlambda)\{ }
+\CommentTok{###################################################################}
+\CommentTok{## calibrates the model lm(bcPower(y,ylambda)~bcPower(x,xlambda))##}
+\CommentTok{## Performs a prediction in the transformed system               ##}
+\CommentTok{## Maps predicted values back into the untransformed system      ##}
+\CommentTok{###################################################################}
+  \KeywordTok{require}\NormalTok{(car)}
+  \CommentTok{## Transform both variables}
+\NormalTok{  y.bc <-}\StringTok{ }\KeywordTok{bcPower}\NormalTok{(y,ylambda)}
+\NormalTok{  x.bc <-}\StringTok{ }\KeywordTok{bcPower}\NormalTok{(x,xlambda)}
+  \CommentTok{## Calibrate transformed model and perform prediciton}
+\NormalTok{  lm.mod <-}\StringTok{ }\KeywordTok{lm}\NormalTok{(y.bc}\OperatorTok{~}\NormalTok{x.bc)}
+\NormalTok{  sigma <-}\StringTok{ }\KeywordTok{sum}\NormalTok{(lm.mod}\OperatorTok{$}\NormalTok{residuals}\OperatorTok{^}\DecValTok{2}\NormalTok{)}\OperatorTok{/}\NormalTok{(}\KeywordTok{length}\NormalTok{(lm.mod}\OperatorTok{$}\NormalTok{residuals)}\OperatorTok{-}\DecValTok{2}\NormalTok{)        }\CommentTok{# estimate residual variance}
+\NormalTok{  x.line <-}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{x.bc=}\KeywordTok{seq}\NormalTok{(}\KeywordTok{min}\NormalTok{(x.bc),}\KeywordTok{max}\NormalTok{(x.bc),}\DataTypeTok{length.out=}\DecValTok{1000}\NormalTok{))  }\CommentTok{# get smooth line}
+\NormalTok{  pred.line <-}\StringTok{ }\KeywordTok{predict}\NormalTok{(lm.mod,x.line)                                  }\CommentTok{# predict y along line}
+
+\NormalTok{  y.med.line <-}\StringTok{ }\KeywordTok{bcReverseMedian}\NormalTok{(pred.line,ylambda)                     }\CommentTok{# predicted median}
+\NormalTok{  y.exp.line <-}\StringTok{ }\KeywordTok{bcReverseExpectation}\NormalTok{(pred.line,ylambda,sigma)          }\CommentTok{# predicted expectation}
+\NormalTok{  x.med.line <-}\StringTok{ }\KeywordTok{bcReverseMedian}\NormalTok{(x.line}\OperatorTok{$}\NormalTok{x.bc,xlambda)                   }\CommentTok{# rescaled independent variable}
+
+  \CommentTok{## Plot data in the original measurement system}
+  \KeywordTok{plot}\NormalTok{(x,y,}\DataTypeTok{pch=}\DecValTok{20}\NormalTok{,                                                 }
+       \DataTypeTok{xlab=}\KeywordTok{deparse}\NormalTok{(}\KeywordTok{substitute}\NormalTok{(x)), }\DataTypeTok{ylab=}\KeywordTok{deparse}\NormalTok{(}\KeywordTok{substitute}\NormalTok{(y)),   }
+       \DataTypeTok{main=}\StringTok{"Predictions after Reverse Box-Cox Transformation"}\NormalTok{)}
+  \CommentTok{## Plot prediciton lines}
+  \KeywordTok{lines}\NormalTok{(x.med.line,y.med.line,}\DataTypeTok{col=}\StringTok{"green"}\NormalTok{,}\DataTypeTok{lwd=}\DecValTok{2}\NormalTok{)                       }\CommentTok{# conditional median}
+  \KeywordTok{lines}\NormalTok{(x.med.line,y.exp.line,}\DataTypeTok{col=}\StringTok{"red"}\NormalTok{,}\DataTypeTok{lwd=}\DecValTok{2}\NormalTok{)                         }\CommentTok{# conditional expectation}
+  \KeywordTok{legend}\NormalTok{(}\StringTok{"topright"}\NormalTok{,}\DataTypeTok{title=}\StringTok{"Conditional Predictions"}\NormalTok{,}\DataTypeTok{inset=}\FloatTok{0.01}\NormalTok{,}\DataTypeTok{bg=}\StringTok{"white"}\NormalTok{,}
+         \DataTypeTok{legend=}\KeywordTok{c}\NormalTok{(}\StringTok{"Median Method"}\NormalTok{,}\StringTok{"Expectation Method"}\NormalTok{),}\DataTypeTok{col=}\KeywordTok{c}\NormalTok{(}\StringTok{"green"}\NormalTok{,}\StringTok{"red"}\NormalTok{),}\DataTypeTok{lwd=}\DecValTok{2}\NormalTok{)}
+\NormalTok{  pred.pts <-}\StringTok{ }\KeywordTok{predict}\NormalTok{(lm.mod)}
+\NormalTok{  pred <-}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{y=}\NormalTok{ y, }\DataTypeTok{y.pred.med=} \KeywordTok{bcReverseMedian}\NormalTok{(pred.pts,ylambda), }
+                     \DataTypeTok{y.pred.exp=} \KeywordTok{bcReverseExpectation}\NormalTok{(pred.pts,ylambda,sigma),}\DataTypeTok{x=}\NormalTok{x)}
+  \KeywordTok{invisible}\NormalTok{(pred)}
+\NormalTok{\} }\CommentTok{#end:plotBoxCox}
+
+\KeywordTok{plotBoxCox}\NormalTok{(Crime}\OperatorTok{$}\NormalTok{police,Crime}\OperatorTok{$}\NormalTok{crime,}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{GISC7310Lab01_files/figure-latex/unnamed-chunk-18-1.pdf}
+For the predictions being mapped back into the original scale, the
+expected predicted value is larger than the median predicted value
+because mean is larger than median in the positively skewed
+distribution. This applies over the full data range of the independent
+variable.
+
+\hypertarget{task-5}{%
+\section{Task 5}\label{task-5}}
+
+\textbf{Numerical Integration {[}2 points{]}} Evaluate the three
+distance decay functions along a line of around the central reference
+point zero. \[
+f_1(x) = exp(-x^1) \\
+f_2(x) = exp(-x^2) \\
+f_3(x) = exp(-x^3) 
+\] over their full distance range \(0≤x≤∞\). Show the clean code for the
+tasks below.
+
+\hypertarget{task-5.1}{%
+\subsection{Task 5.1}\label{task-5.1}}
+
+Plot these three functions within a reasonable value range of the
+distance x. How does the shape of the curves change with increasing
+power?
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{x <-}\StringTok{ }\KeywordTok{seq}\NormalTok{(}\DataTypeTok{from =} \DecValTok{0}\NormalTok{,}\DataTypeTok{to =} \DecValTok{5}\NormalTok{,}\DataTypeTok{by =} \FloatTok{0.1}\NormalTok{)}
+\NormalTok{y1 <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x)\{}\KeywordTok{return}\NormalTok{(}\KeywordTok{exp}\NormalTok{(}\OperatorTok{-}\NormalTok{(x}\OperatorTok{^}\DecValTok{1}\NormalTok{)))\}}
+\NormalTok{y2 <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x)\{}\KeywordTok{return}\NormalTok{(}\KeywordTok{exp}\NormalTok{(}\OperatorTok{-}\NormalTok{(x}\OperatorTok{^}\DecValTok{2}\NormalTok{)))\}}
+\NormalTok{y3 <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x)\{}\KeywordTok{return}\NormalTok{(}\KeywordTok{exp}\NormalTok{(}\OperatorTok{-}\NormalTok{(x}\OperatorTok{^}\DecValTok{3}\NormalTok{)))\}}
+\KeywordTok{plot}\NormalTok{(x,}\KeywordTok{y1}\NormalTok{(x),}\DataTypeTok{col =} \StringTok{'red'}\NormalTok{,}\DataTypeTok{type =} \StringTok{'l'}\NormalTok{)}
+\KeywordTok{lines}\NormalTok{(x,}\KeywordTok{y2}\NormalTok{(x),}\DataTypeTok{col =} \StringTok{'blue'}\NormalTok{,}\DataTypeTok{type =} \StringTok{'l'}\NormalTok{)}
+\KeywordTok{lines}\NormalTok{(x,}\KeywordTok{y3}\NormalTok{(x),}\DataTypeTok{col =} \StringTok{'green'}\NormalTok{,}\DataTypeTok{type =} \StringTok{'l'}\NormalTok{)}
+\KeywordTok{legend}\NormalTok{(}\StringTok{"topright"}\NormalTok{, }\DataTypeTok{legend=}\KeywordTok{c}\NormalTok{(}\StringTok{"exp(-x^1)"}\NormalTok{, }\StringTok{"exp(-x^2)"}\NormalTok{,}\StringTok{"exp(-x^3)"}\NormalTok{),}
+       \DataTypeTok{col=}\KeywordTok{c}\NormalTok{(}\StringTok{"red"}\NormalTok{, }\StringTok{"blue"}\NormalTok{,}\StringTok{'green'}\NormalTok{), }\DataTypeTok{lty=}\DecValTok{1}\NormalTok{, }\DataTypeTok{cex=}\FloatTok{0.8}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{GISC7310Lab01_files/figure-latex/unnamed-chunk-19-1.pdf}
+
+Before \(x <1\), when the power goes up, the decrease speed of the
+dependent variable (y) goes down. \(exp(-x^3 )>expa(-x^2 )>expa(-x^1 )\)
+After \(x>1\), when the power goes up, the decrease speed of the
+dependent variable (y) increases.
+
+\hypertarget{task-5.2}{%
+\subsection{Task 5.2}\label{task-5.2}}
+
+Evaluate the areas \(A_1, A_2\) and \(A_3\) underneath the three curves
+over their full support \(0≤x≤∞\) with \texttt{integrate(\ )} function.
+
+\hypertarget{task-5.3}{%
+\subsection{Task 5.3}\label{task-5.3}}
+
+Calculate the expectation of the distances
+\(E_i (x) = ∫_0^∞\frac{ x * (f_i (x))}{A_i} dx\) for all three distance
+decay functions i∈\{1,2,3\}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{f <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(lambda)\{}
+\NormalTok{  A <-}\StringTok{ }\KeywordTok{integrate}\NormalTok{(}\ControlFlowTok{function}\NormalTok{(x) \{}\KeywordTok{exp}\NormalTok{(}\OperatorTok{-}\NormalTok{x}\OperatorTok{^}\NormalTok{lambda)\}, }\DecValTok{0}\NormalTok{, }\OtherTok{Inf}\NormalTok{)}
+\NormalTok{  fnE <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x) \{x}\OperatorTok{*}\KeywordTok{exp}\NormalTok{(}\OperatorTok{-}\NormalTok{x}\OperatorTok{^}\NormalTok{lambda)}\OperatorTok{/}\NormalTok{A}\OperatorTok{$}\NormalTok{value\}}
+\NormalTok{  E <-}\StringTok{ }\KeywordTok{integrate}\NormalTok{(fnE, }\DecValTok{0}\NormalTok{, }\OtherTok{Inf}\NormalTok{)}
+\NormalTok{  fnV <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x) \{((x}\OperatorTok{-}\NormalTok{E}\OperatorTok{$}\NormalTok{value)}\OperatorTok{^}\DecValTok{2}\NormalTok{)}\OperatorTok{*}\KeywordTok{exp}\NormalTok{(}\OperatorTok{-}\NormalTok{x}\OperatorTok{^}\NormalTok{lambda)}\OperatorTok{/}\NormalTok{A}\OperatorTok{$}\NormalTok{value\}}
+\NormalTok{  Var <-}\StringTok{ }\KeywordTok{integrate}\NormalTok{(fnV, }\DecValTok{0}\NormalTok{, }\OtherTok{Inf}\NormalTok{)}
+  \KeywordTok{return}\NormalTok{(}\KeywordTok{cbind}\NormalTok{(}\DataTypeTok{Lambda=}\NormalTok{lambda, }\DataTypeTok{Area=}\NormalTok{A}\OperatorTok{$}\NormalTok{value, }\DataTypeTok{Expectation=}\NormalTok{E}\OperatorTok{$}\NormalTok{value,}
+               \DataTypeTok{Variance=}\NormalTok{Var}\OperatorTok{$}\NormalTok{value)) \}}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{f}\NormalTok{(}\DecValTok{1}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##      Lambda Area Expectation Variance
+## [1,]      1    1           1        1
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{f}\NormalTok{(}\DecValTok{2}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##      Lambda      Area Expectation  Variance
+## [1,]      2 0.8862269   0.5641896 0.1816901
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{f}\NormalTok{(}\DecValTok{3}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##      Lambda      Area Expectation  Variance
+## [1,]      3 0.8929795   0.5054681 0.1177842
+\end{verbatim}
+
+\hypertarget{task-6}{%
+\section{Task 6}\label{task-6}}
+
+\textbf{Appendix 1 {[}2 points{]}}
+
+\hypertarget{task-6.1}{%
+\subsection{Task 6.1}\label{task-6.1}}
+
+Why is a t-distributed random variable 𝑇 with 𝑑𝑓𝑡 degrees of freedom
+when it is squared 𝑇2 identically to the 𝐹-distributed random variable
+with one degree of freedom in the numerator and 𝑑𝑓𝑡 degrees of freedom
+for the denominator? Hint: use the definition of both random variables.
+{[}0.8 points{]}
+
+\end{document}
