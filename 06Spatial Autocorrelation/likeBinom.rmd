@@ -1,0 +1,59 @@
+---
+title: "Maximum likelihood"
+author: "Yalin Yang"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_float: 
+          collapsed: false
+    number_sections: true          
+    toc_depth: 3  
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, prompt = TRUE, comment = "R>", cache = FALSE)
+```
+
+# Evaluate the likelihood and log-likelhood functions
+
+The following code-chunks evaluate the likelihood function $L(\pi \mid x,n)=\pi^x \cdot (1-\pi)^{n-x}$ and the log-likelihood function of a binary distributed outcomes $x_i \in \{0,1\}$. 
+
+Set up the model:
+```{r def}
+pi <- 1:99/100                                 # sequence of valid pi values
+x <- 7                                         # number of successes
+n <- 10                                        # number of trails
+likFunc <- function(x,n,pi) pi^x*(1-pi)^(n-x)  # likelihood function
+```
+
+It shows, by example, that the maximum $\pi_{max}$ of both functions with the number of successes `r x` and the number of trails `r n` is the *identical*.
+
+# Plot the likelihood function $L(\pi \mid x,n)$
+```{r lik}
+plot(pi,likFunc(x,n,pi), type="l", xlab=expression(pi), 
+     ylab="likelihood function")
+abline(v=x/n, lty=5, col="red")
+```
+
+# Plot the log-likelihood function $\log(L(\pi \mid x,n))$
+```{r loglik}
+plot(pi,log(likFunc(x,n,pi)), type="l", xlab=expression(pi), 
+     ylab="log-likelihood function")
+abline(v=x/n, lty=5, col="red")
+```
+
+# The numerical solution for $\hat{\pi} = \frac{x}{n}$
+The log-likelihood function is:
+$$
+\log(L(\pi)) \stackrel{\rm def}{=}
+    \log(\pi^x \cdot (1-\pi)^{n-x}) = x \cdot \log \pi + (n-x) \cdot \log (1-\pi)  
+$$
+Its first derivative becomes:
+$$
+\frac{d \log(L(\pi))}{d \pi}  =  \frac{x}{\pi} + \frac{n-x}{1-\pi} \cdot -1 =  \frac{x}{\pi} - \frac{n-x}{1-\pi}
+$$
+Setting the first derivative equal to zero gives the desired estimator \hat{\pi} = \frac{x}{n}:
+$$
+\frac{x}{\pi} - \frac{n-x}{1-\pi} = 0 \Rightarrow \hat{\pi} = \frac{x}{n}
+$$

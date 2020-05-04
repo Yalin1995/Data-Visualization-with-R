@@ -1,0 +1,123 @@
+---
+title: 'Script: MultiWeightedMaxLike'
+author: "Michael Tiefelsdorf"
+date: "3/29/2020"
+output: 
+  html_document:
+    toc: true
+    toc_float: 
+          collapsed: false
+    number_sections: true          
+    toc_depth: 3  
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, prompt = TRUE, comment = "R>", cache = FALSE)
+rm(list=ls())
+library(TexMix)
+```
+
+# Read data & explore data
+```{r readdata}
+setwd("G:\\UTD_Classes\\2020Spring\\GISC7310_AdvancedDataAnalysis\\LC6MLandGLS")
+Bladder <- foreign::read.spss("bladder_wmp2.sav",to.data.frame=TRUE)
+
+car::scatterplotMatrix(~bladp2+lungp1+popden, data=Bladder)
+car::scatterplotMatrix(~log(bladp2)+log(lungp1)+log(popden), data=Bladder)
+hist(Bladder$pop, breaks=20, freq=FALSE, xlab="Population at Risk")
+lines(density(Bladder$pop), col="red")
+```
+
+Note: these data are _areal aggregates_ therefore there will be some _ecological biases_ in the model estimates.
+
+# Variables description
+* The dependent variable `bladp2` measure the age-adjusted male bladder cancer mortality rate per 100.000 population at risk for the 508 US State Economic Areas (SEA) for the period of 1970 to 1994.
+
+* The independent variable `lungp1` is the male lung cancer rate for the period 1950 to 1969. It is a proxy variable for smoking. Smoking is both a risk factor for lung and bladder cancer. Lung cancer has a shorter latency period than bladder cancer. Therefore, the 1950 to 1969 period is used.
+
+* The independent variable `popden` is a proxy variable for behavioral and environmental factors. The populations behavior as well as environmental conditions are different in urban, suburban and rural SEAs.
+
+* The weights variable `pop` is the count of the population at risk in each SEA for the period 1970 to 1994. It varies substantially from SEA to SEA. Thus the SEA's rates of `bladp2` have different denominators and are expected to have varying variances, which cause heteroscedasticity.
+
+# Basic model and heteroscedasticity test
+
+```{r heterotest}
+lmBase <- lm(log(bladp2)~log(lungp1)+log(popden), data=Bladder)
+summary(lmBase)
+
+car::ncvTest(lmBase, data=Bladder) 
+car::ncvTest(lmBase, var.formula=~log(pop), data=Bladder)
+```
+
+Concurring with epidemiological knowledge, the higher the smoking rate (i.e., `lungp1`) the higher the bladder cancer rate. More densely populated SEA's have are populated the higher the bladder cancer rate. 
+
+The Breusch-Pagan test `car::ncvTest` preforms a score test of the hypothesis of constant error variance against the alternatives [a] that the error variance changes with the level of the fitted values (first test), or [b] with a linear combination of predictors (second test). Notice that the weights variable in the second test is entered log-transformed.
+
+* The unspecific test without an explicit heteroscedasticity model is borderline significant. 
+
+* In contrast, assuming that the error variance is a function of the underlying population at risk is highly significant.
+
+# Underlying idea of model calibration
+See Kleiber & Zeileis pp 76-78 "Weighted Least Squares".  At the first step, use the model 
+
+$$
+ \log{\hat{\sigma}_i^2}={\tt fitted}(\log{\epsilon_i^2} \sim \log pop_i) 
+$$
+to predict the heteroscedastic error variance. In a subsequent step use the inverse variance $w_i=\frac{1}{\exp(\hat{\sigma}_i^2)}$ as weight in an updated regression $y \sim x_1+x_2+ \cdots +x_k, {\tt weight}=w_i$. Note: This way observations with higher uncertainty are down-weighted. It is possible to iterate.
+
+```{r auxreg}
+auxreg <- lm(log(residuals(lmBase)^2)~log(Bladder$pop)) 
+summary(auxreg)
+
+plot(log(residuals(lmBase)^2)~log(Bladder$pop)); abline(auxreg, col="red")
+title("Heteroscedastic lm-Residuals")
+
+## Weighted Regression
+predLogSigma2 <- fitted(auxreg)
+lmUpdated <- update(lmBase, weights=1/exp(predLogSigma2))
+summary(lmUpdated)
+
+```
+
+# Use `lmHetero()` to model Heteroscedasticity
+To account for heteroscedasticity related to `log(pop)` the `lmHetero` function in the package `TexMix` can be used. See its online help on how to call the function and what objects it returns.
+
+```{r simpleHetero}
+lmH1 <- lmHetero(lnbladd~lnlung1+lnpopden | log(pop), data=Bladder)
+summary(lmH1)                         # coefficients of lmH1 and lmBase are similar
+names(lmH1)
+```
+
+Compared to the OLS model the estimated regression coefficients have not changed substantially because even under heteroscedasticity the OLS coefficients are unbiased. However, their standard errors will change.
+
+The `gamma coefficient` of `log(pop)` is _negative_ and significant. Thus with an increasing population at risk $n_i$, as suggested by theory, the error variance $\sigma_i^2$ shrinks:
+$$
+\sigma_i^2 \sim \frac{1}{n_i}
+$$
+The likelihood ratio test indicates that, compared to the log-likelihood of the plain OLS model, the log-likelihood of the adjusted model is _significantly_ larger.
+
+The `lmHetero( )` returns also a vector of case weights, which can be use in the standard `lm( )` function. This allows to perform the standard model diagnostics of the OLS model. The estimated regression coefficients are identical to those of the `lmHetero` model. The residuals obtained with the function `weighted.residuals( )` are free of heteroscedasticity with respect to the weights variable.
+
+```{r weightReg}
+## Once weights are estimated, diagnositcs could proceed with lm() and the weights-option
+wlm1 <- lm(log(bladp2)~log(lungp1)+log(popden), data=Bladder, weights=lmH1$weights)
+summary(wlm1)                         # Results of lmH1 and wlm1 are identical
+wResid <- weighted.residuals(wlm1)    # Function to adjust residuals for heteroscedasticity
+```
+
+The example shows how a linear combination of several weights variables can be used.
+```{r squareHetero}
+##
+## Model with quadratic weights structure
+##
+lmH2 <- lmHetero(log(bladp2)~log(lungp1)+log(popden) | log(pop)+I(log(pop)^2), data=Bladder)
+summary(lmH2)
+
+##
+## Manual LR-Test: Quadratic versus linear weights structue
+##
+(chi <- -2*(lmH1$logLikeH1-lmH2$logLikeH1))
+(pchisq(chi,df=1, lower.tail=F))
+```
+
+The manual likelihood ratio test compares the model with `| log(pop)` against the augmented model `| log(pop)+I(log(pop)^2`. In this case, there is no significant improvement using the augmented model and its `Gamma Coefficients` are no longer significant.

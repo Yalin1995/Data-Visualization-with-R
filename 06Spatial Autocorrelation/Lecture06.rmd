@@ -1,0 +1,377 @@
+---
+title: "Spatial Autocorrelation & Heteroscedasticity"
+author: "Yalin Yang"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
+    toc_float:
+      collapsed: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+--- 
+
+# Maximum Likelihood
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, prompt = TRUE, comment = "R>", cache = FALSE)
+```
+
+## Evaluate the likelihood and log-likelhood functions
+
+The following code-chunks evaluate the likelihood function 
+$L(\pi \mid x,n)=\pi^x \cdot (1-\pi)^{n-x}$ and the log-likelihood function of a binary distributed outcomes $x_i \in \{0,1\}$. 
+
+Set up the model:
+```{r def}
+pi <- 1:99/100                                 # sequence of valid pi values
+x <- 7                                         # number of successes
+n <- 10                                        # number of trails
+likFunc <- function(x,n,pi) pi^x*(1-pi)^(n-x)  # likelihood function
+```
+
+It shows, by example, that the maximum $\pi_{max}$ of both functions with the number of successes `r x` and the number of trails `r n` is the *identical*.
+
+Plot the likelihood function $L(\pi \mid x,n)$
+
+```{r lik, fig.height=8, fig.width=12}
+plot(pi,likFunc(x,n,pi), type="l", xlab=expression(pi), 
+     ylab="likelihood function")
+abline(v=x/n, lty=5, col="red")
+```
+
+Plot the log-likelihood function $\log(L(\pi \mid x,n))$
+
+```{r loglik, fig.height=8, fig.width=12}
+plot(pi,log(likFunc(x,n,pi)), type="l", xlab=expression(pi), 
+     ylab="log-likelihood function")
+abline(v=x/n, lty=5, col="red")
+```
+
+The numerical solution for $\hat{\pi} = \frac{x}{n}$
+The log-likelihood function is:
+$$
+\log(L(\pi)) \stackrel{\rm def}{=}
+    \log(\pi^x \cdot (1-\pi)^{n-x}) = x \cdot \log \pi + (n-x) \cdot \log (1-\pi)  
+$$
+
+Its first derivative becomes:
+$$
+\frac{d \log(L(\pi))}{d \pi}  =  \frac{x}{\pi} + \frac{n-x}{1-\pi} \cdot -1 =  \frac{x}{\pi} - \frac{n-x}{1-\pi}
+$$
+
+Setting the first derivative equal to zero gives the desired estimator \hat{\pi} = \frac{x}{n}:
+$$
+\frac{x}{\pi} - \frac{n-x}{1-\pi} = 0 \Rightarrow \hat{\pi} = \frac{x}{n}
+$$
+
+# Heteroscedasticity
+
+## Read data & explore data
+
+```{r fig.height=8, fig.width=12, message=FALSE, warning=FALSE}
+rm(list=ls())
+library(TexMix)
+setwd("G:\\UTD_Classes\\2020Spring\\GISC7310_AdvancedDataAnalysis\\06Spatial Autocorrelation")
+Bladder <- foreign::read.spss("bladder_wmp2.sav",to.data.frame=TRUE)
+
+car::scatterplotMatrix(~bladp2+lungp1+popden, data=Bladder)
+car::scatterplotMatrix(~log(bladp2)+log(lungp1)+log(popden), data=Bladder)
+hist(Bladder$pop, breaks=20, freq=FALSE, xlab="Population at Risk")
+lines(density(Bladder$pop), col="red")
+```
+Note: these data are _areal aggregates_ therefore there will be some _ecological biases_ in the model estimates.
+
+## Variables description
+* The dependent variable `bladp2` measure the age-adjusted male bladder cancer mortality rate per 100.000 population at risk for the 508 US State Economic Areas (SEA) for the period of 1970 to 1994.
+
+* The independent variable `lungp1` is the male lung cancer rate for the period 1950 to 1969. It is a proxy variable for smoking. Smoking is both a risk factor for lung and bladder cancer. Lung cancer has a shorter latency period than bladder cancer. Therefore, the 1950 to 1969 period is used.
+
+* The independent variable `popden` is a proxy variable for behavioral and environmental factors. The populations behavior as well as environmental conditions are different in urban, suburban and rural SEAs.
+
+* The weights variable `pop` is the count of the population at risk in each SEA for the period 1970 to 1994. It varies substantially from SEA to SEA. Thus the SEA's rates of `bladp2` have different denominators and are expected to have varying variances, which cause heteroscedasticity.
+
+## Basic model and heteroscedasticity test
+
+```{r}
+lmBase <- lm(log(bladp2)~log(lungp1)+log(popden), data=Bladder)
+summary(lmBase)
+
+car::ncvTest(lmBase, data=Bladder) 
+car::ncvTest(lmBase, var.formula=~log(pop), data=Bladder)
+```
+
+Concurring with epidemiological knowledge, the higher the smoking rate (i.e., `lungp1`) the higher the bladder cancer rate. More densely populated SEA's have are populated the higher the bladder cancer rate. 
+
+The Breusch-Pagan test `car::ncvTest` preforms a score test of the hypothesis of constant error variance against the alternatives [a] that the error variance changes with the level of the fitted values (first test), or [b] with a linear combination of predictors (second test). Notice that the weights variable in the second test is entered log-transformed.
+
+* The unspecific test without an explicit heteroscedasticity model is borderline significant. 
+
+* In contrast, assuming that the error variance is a function of the underlying population at risk is highly significant.
+
+## Underlying idea of model calibration
+See Kleiber & Zeileis pp 76-78 "Weighted Least Squares".  At the first step, use the model 
+
+$$
+ \log{\hat{\sigma}_i^2}={\tt fitted}(\log{\epsilon_i^2} \sim \log pop_i) 
+$$
+
+to predict the heteroscedastic error variance. In a subsequent step use the inverse variance $w_i=\frac{1}{\exp(\hat{\sigma}_i^2)}$ as weight in an updated regression $y \sim x_1+x_2+ \cdots +x_k, {\tt weight}=w_i$. Note: This way observations with higher uncertainty are down-weighted. It is possible to iterate.
+
+```{r}
+auxreg <- lm(log(residuals(lmBase)^2)~log(Bladder$pop)) 
+summary(auxreg)
+```
+
+```{r fig.height=8, fig.width=12}
+plot(log(residuals(lmBase)^2)~log(Bladder$pop)); abline(auxreg, col="red")
+title("Heteroscedastic lm-Residuals")
+```
+
+```{r}
+## Weighted Regression
+predLogSigma2 <- fitted(auxreg)
+lmUpdated <- update(lmBase, weights=1/exp(predLogSigma2))
+summary(lmUpdated)
+```
+
+## Use `lmHetero()` to model Heteroscedasticity
+To account for heteroscedasticity related to `log(pop)` the `lmHetero` function in the package `TexMix` can be used. See its online help on how to call the function and what objects it returns.
+
+```{r}
+lmH1 <- lmHetero(lnbladd~lnlung1+lnpopden | log(pop), data=Bladder)
+summary(lmH1)                         # coefficients of lmH1 and lmBase are similar
+# names(lmH1)
+```
+
+Compared to the OLS model the estimated regression coefficients have not changed substantially because even under heteroscedasticity the OLS coefficients are unbiased. However, their standard errors will change.
+
+The `gamma coefficient` of `log(pop)` is _negative_ and significant. Thus with an increasing population at risk $n_i$, as suggested by theory, the error variance $\sigma_i^2$ shrinks:
+$$
+\sigma_i^2 \sim \frac{1}{n_i}
+$$
+
+The likelihood ratio test indicates that, compared to the log-likelihood of the plain OLS model, the log-likelihood of the adjusted model is _significantly_ larger.
+
+The `lmHetero( )` returns also a vector of case weights, which can be use in the standard `lm( )` function. This allows to perform the standard model diagnostics of the OLS model. The estimated regression coefficients are identical to those of the `lmHetero` model. The residuals obtained with the function `weighted.residuals( )` are free of heteroscedasticity with respect to the weights variable.
+
+```{r}
+## Once weights are estimated, diagnositcs could proceed with lm() and the weights-option
+wlm1 <- lm(log(bladp2)~log(lungp1)+log(popden), data=Bladder, weights=lmH1$weights)
+summary(wlm1)                         # Results of lmH1 and wlm1 are identical
+wResid <- weighted.residuals(wlm1)    # Function to adjust residuals for heteroscedasticity
+```
+
+The example shows how a linear combination of several weights variables can be used.
+
+```{r}
+##
+## Model with quadratic weights structure
+##
+lmH2 <- lmHetero(log(bladp2)~log(lungp1)+log(popden) | log(pop)+I(log(pop)^2), data=Bladder)
+summary(lmH2)
+
+##
+## Manual LR-Test: Quadratic versus linear weights structue
+##
+(chi <- -2*(lmH1$logLikeH1-lmH2$logLikeH1))
+(pchisq(chi,df=1, lower.tail=F))
+```
+
+The manual likelihood ratio test compares the model with `| log(pop)` against the augmented model `| log(pop)+I(log(pop)^2`. In this case, there is no significant improvement using the augmented model and its `Gamma Coefficients` are no longer significant.
+
+# Spatial Autocorrelation
+
+## Import data
+
+```{r fig.height=8, fig.width=12, message=FALSE, warning=FALSE}
+rm(list=ls(all=TRUE))
+library(car); library(maptools); library(spdep); library(TexMix)
+##
+## Read Poly Shapefiles (readShapePoly in library maptools)
+##
+setwd('./Italy')
+getinfo.shape("Provinces.shp")
+neig.shp <- rgdal::readOGR(dsn=getwd(), layer="Neighbors", integer64="warn.loss")
+prov.shp <- rgdal::readOGR(dsn=getwd(), layer="Provinces", integer64="warn.loss")
+summary(prov.shp)
+
+proj4string(prov.shp)                                    # map projection
+prov.centroid <- coordinates(prov.shp)                   # Get province centroids
+prov.bbox <- bbox(prov.shp)                              # province bounding box for map region
+```
+
+## Bipolar Map
+
+Qualitative map theme of `REGION`
+
+```{r fig.height=8, fig.width=12}
+table(prov.shp$REGION)
+
+plot(neig.shp,axes=T,col=grey(0.9), border="white",      # background: neighboring countries
+     xlim=prov.bbox[1,], ylim=prov.bbox[2,])                     
+mapColorQual(prov.shp$REGION, prov.shp, map.title="Italy's Regions",
+                          legend.title="Region", add.to.map=T)   
+```
+
+Gradient map theme of `TOTFERTRAT`
+
+```{r fig.height=8, fig.width=12}
+plot(neig.shp,axes=T,col=grey(0.9),border="white",       # first background (axes=T adds lat/long frame)
+     xlim=prov.bbox[1,],ylim=prov.bbox[2,])              # within bounding box
+mapColorRamp(prov.shp$TOTFERTRAT, prov.shp, breaks=8,    # second add map
+              map.title="Spatial Pattern of Fertility Rate",
+              legend.title="Fertility Rate", 
+              legend.cex=1.7, add.to.map=T)
+```
+
+## Basic regression model
+
+```{r fig.height=8, fig.width=12}
+## Regression model for fertility including model diagnostics
+scatterplotMatrix(~TOTFERTRAT+ILLITERRAT+FEMMARAGE+DIVORCERAT+TELEPERFAM, data=prov.shp,
+                   smooth=list(span = 0.35, lty.smooth=1, col.smooth="red", col.var="salmon"),
+                   regLine=list(col="green"))
+
+fert.lm <- lm(TOTFERTRAT~ILLITERRAT+FEMMARAGE+DIVORCERAT+TELEPERFAM, data=prov.shp)
+summary(fert.lm,corr=F)
+vif(fert.lm)
+
+# Perform Residual Diagnostics
+influenceIndexPlot(fert.lm, id=list(n=3,labels=prov.shp$PROVNAME))
+fertResid <- residuals(fert.lm)
+```
+
+## Identify potential outlier
+
+```{r fig.height=8, fig.width=12}
+## Why is Bolzano-Bozen an extreme observation? Shall we delete it?
+idx.max <- which.max(abs(fertResid))        # Get index of a record with "outlying" observation 
+
+## Map potential outlier
+extremeObs <- rep(0, length(fertResid))
+extremeObs[idx.max] <- 1
+extremeObs <- factor(extremeObs, labels=c("Population","Outlier"))
+table(extremeObs)
+plot(neig.shp,axes=T,col=grey(0.9),border="white",                 # background: neighboring countries
+     xlim=prov.bbox[1,],ylim=prov.bbox[2,])                     
+mapColorQual(extremeObs, prov.shp, map.title="Potential Outlier",
+              legend.title="Outliers", add.to.map=T)        
+
+## Inspect outlier
+prov.shp@data[idx.max,]                      # List info of record centre is outlier
+
+## Delete outlier or update information
+#prov.shp <- prov.shp[-idx.max ]             # Delete extreme observation from shapefile 
+prov.shp@data[idx.max, "TOTFERTRAT"] <- 1.2  # Or change its value within the shapefile
+
+## Continue with updated dataset
+fert.lm <- lm(TOTFERTRAT~ILLITERRAT+FEMMARAGE+DIVORCERAT+TELEPERFAM,data=prov.shp) # update model
+summary(fert.lm)
+influenceIndexPlot(fert.lm, id=list(n=3, labels=prov.shp$PROVNAME))
+```
+
+## Check for heteroscedasticity
+
+```{r}
+## Check for heteroscedasticity
+fert.fgls <- lmHetero(TOTFERTRAT~ILLITERRAT+FEMMARAGE+DIVORCERAT+TELEPERFAM | log(FEMPOP94),
+                      data=prov.shp)
+summary(fert.fgls)
+```
+
+Note the possitive sign of $\gamma_2$ is contradicting theory. This is marginal significant of the heteroscedastic model and will be used subsequently for demonstration purposes.
+
+Therefore, the lm-model is updated to a weighted lm-model.
+```{r wlm}
+fert.wlm <- lm(TOTFERTRAT~ILLITERRAT+FEMMARAGE+DIVORCERAT+TELEPERFAM, data=prov.shp,
+               weights=fert.fgls$weights)
+summary(fert.wlm)
+```
+
+## Map the regression residual
+
+```{r residmap, fig.height=8, fig.width=12}
+## Plot Regression Residuals (Bi-polar)
+fertResid <- weighted.residuals(fert.wlm)                # Update residuals
+hist(fertResid, main="Residuals of Weighted Model")      # Explore distribution to
+length(fertResid[fertResid < 0])                         # identify number of pos/neg classes
+length(fertResid[fertResid >= 0])
+
+plot(neig.shp,axes=T,col=grey(0.9),border="white",
+     xlim=prov.bbox[1,],ylim=prov.bbox[2,])               # first background
+mapBiPolar(fertResid, prov.shp,                           # second regression residuals
+            neg.breaks=5, pos.breaks=4, break.value=0.0, 
+            map.title="Fertility Model Residuals",
+            legend.title="Residuals", 
+            legend.cex=1.7, add.to.map=T)
+```
+
+The map pattern indicates that there are spatial clusters with positive and negative regression residuals. Thus the independence assumption is violated.
+
+## Identify the linkage structure
+
+```{r linkmap, fig.height=8, fig.width=12}
+## Plot Augmented Spatial Links among Italian Provinces
+## Notes: Shape file has been edited so satellite islands are connected to mainland
+## Alternatively spdep::edit.nb function (does not work with RStudio)
+prov.link <- poly2nb(prov.shp, queen=F)                          # Generate neighbors links
+
+plot(neig.shp,axes=T,col=grey(0.9),border="white",
+     xlim=prov.bbox[1,],ylim=prov.bbox[2,])                      # First background
+plot(prov.shp,col="palegreen3" ,border=grey(0.9), axes=T, add=T) # Second plot areas
+plot(prov.link,coords=prov.centroid, pch=19, cex=0.1,            # Third plot links focused at centroids
+     col="blue", add=T)
+title("Augmented Spatial Links among Provinces")                 # Forth add title
+box()                                                            # Fifth refresh frame
+```
+
+## Perform a test for spatial autocorrelation in the residuals
+
+```{r morantest, fig.height=8, fig.width=12}
+prov.linkW <- nb2listw(prov.link, style="W")                   # generated row-sum standardized neighbors list
+spOutliers <- moran.plot(weighted.residuals(fert.wlm),         # Moran plot with outlier diagnositics
+                         prov.linkW, labels=prov.shp$PROVNAME)          
+lm.morantest(fert.wlm, prov.linkW)                             # Test with W-coding scheme
+```
+
+Also look up `help(lm.morantest)`. Internally weighted regression residuals are used.
+
+## Maximum likelihood estimation of SAR
+Check the online help for the `spdep::spautolm( )` function. Note the use of the `weights` option here. When the `weights` option is used `spautolm` requires a full specification of the model rather than just using the `fert.wlm` object.
+```{r SARmodel, message=FALSE, warning=FALSE}
+fert.SAR <- spautolm(TOTFERTRAT~ILLITERRAT+FEMMARAGE+DIVORCERAT+TELEPERFAM, 
+                     data=prov.shp, weights = fert.fgls$weights,
+                     na.action="na.omit", listw=prov.linkW, family="SAR")
+summary(fert.SAR)
+```
+
+The likelihood ratio test of the SAR model is identically to the hand calculated one. Important here is a slight difference in the calculation when heteroscedasticity is incorporated.
+```{r SARlikeratio}
+## Likelihood Ratio test (identical to LR from spautolm)
+#(likeH0 <- logLik(fert.lm))                     # Use for unweighted model
+likeH0 <- fert.fgls$logLikeH1
+(likeH1 <- logLik(fert.SAR))
+
+cat("chi-square value:  ", chi <- -2*(likeH0[1]-likeH1[1]))
+cat("\nerror-probability: ", pchisq(chi, df=1, lower.tail=F))
+```
+
+Check whether the residuals are as expected free of spatial autocorrelation. Because the distribution of ML residuals in unknown, Morans's $I$ is evaluated here using a randomization approach.
+```{r SARresid, fig.height=8, fig.width=12}
+## Moran test applying randomization because ML may not be normal distributed
+plot(neig.shp,axes=T,col=grey(0.9),border="white",
+     xlim=prov.bbox[1,],ylim=prov.bbox[2,])                        # first background
+mapBiPolar(residuals(fert.SAR), prov.shp,                          # second regression residuals
+            neg.breaks=5, pos.breaks=4, break.value=0.0, 
+            map.title="Fertility SAR Model Residuals",
+            legend.title="Residuals", legend.cex = 1.6,
+            add.to.map=T)
+
+## Evaluate ML residuals for spatial autocorrelation
+moran.mc(residuals(fert.SAR), prov.linkW, nsim=9999) 
+
+```
