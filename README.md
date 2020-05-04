@@ -5,6 +5,9 @@ Data Visualization with R
 ### Chapter2
 * [Scatter & Polyline Plot](https://yalin1995.github.io/Data-Visualization-with-R/Chapter2/Scatter&Polyline_plot.nb.html)
 
+## Labs
+### 1. [Lab01](https://yalin1995.github.io/Data-Visualization-with-R/Lab01/GISC7310Lab01.html)
+
 ## Chapters
 ### 1. [Population and Sampling Distributions](https://yalin1995.github.io/Data-Visualization-with-R/1.Population%20and%20Sampling%20Distributions/HamApp01.pdf)
 * [R Code(pdf)](https://yalin1995.github.io/Data-Visualization-with-R/1.Population%20and%20Sampling%20Distributions/Lecture01.pdf)
@@ -30,3 +33,5 @@ Data Visualization with R
 
 ### 8. [The Generalized Linear Model](https://yalin1995.github.io/Data-Visualization-with-R/08The%20Generalized%20Linear%20Model/GLMwithExtension.pdf)
 * [R Code(html)](https://yalin1995.github.io/Data-Visualization-with-R/08The%20Generalized%20Linear%20Model/Lecture08.html)
+
+
