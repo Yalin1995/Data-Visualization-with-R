@@ -1,0 +1,19 @@
+---
+title: "Lab03: Matrix Operations & Model Diagnostics"
+author: "Yalin Yang"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
+    toc_float:
+      collapsed: no
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+--- 
+
+# Part 1
+**Matrix Operations (5 points)**
+

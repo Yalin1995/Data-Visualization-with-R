@@ -1,0 +1,267 @@
+---
+title: "Extended Topics of Regression Analysis"
+author: "Yalin Yang"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_float: 
+          collapsed: false
+    number_sections: true          
+    toc_depth: 3  
+---
+
+## Task 1 Specification of the Dependent Variable (2 points)
+
+You are given the absolute counts of votes for Trump **(TRUMPVOT16)**, Clinton **(CLINTONVOT)** and others  **(OTHERVOT16)**, as well as the number of persons 18 years and older  **(POP18PLUS)**, number of registered voters  **(REGVOT16)** and the turnout rate  **(TURNOUT16)**.
+
+### Qa：
+Calculate the **percentage of voters** who voted for either candidate. Be careful to select the proper reference population in the denominator. Justify your calculation.
+
+```{r message=FALSE, warning=FALSE}
+rm(list=ls(all=TRUE))
+library(maptools);library(car);library(spdep); library(TexMix)
+# Read Shapefile
+
+setwd('G:\\UTD_Classes\\2020Spring\\GISC7310_AdvancedDataAnalysis\\LC6MLandGLS\\TXCnty2018')
+ct.shp <- rgdal::readOGR(dsn=getwd(), layer="TXCnty", integer64="warn.loss")
+hw.shp <- rgdal::readOGR(dsn=getwd(), layer="InterStateHwy", integer64="warn.loss")
+ng.shp <- rgdal::readOGR(dsn=getwd(), layer="TXNeighbors", integer64="warn.loss")
+ct.bbox <- bbox(ct.shp)
+```
+
+```{r}
+mapplot <- function(titile,info,breaks,legend_title){
+  
+  plot(ng.shp,axes=T,col=grey(0.9),border="white",xlim=ct.bbox[1,],ylim=ct.bbox[2,])
+  mapColorRamp(info,ct.shp,breaks=breaks,map.title=titile,
+               legend.title= legend_title,legend.cex=1.4, add.to.map=T)
+}
+```
+
+**For evaluating the percentage of voters who voted for either Clinton or trump, the research population should be all voters who actually participate in an election. That is why I select the total number of registered voters multiple turnout percentage as my denominator.**
+```{r}
+ct.data <- as.data.frame(ct.shp)
+ct.data$TRUMPRate <- ct.data$TRUMPVOT16 / (ct.data$REGVOT16 * ct.data$TURNOUT16)
+ct.data$CLINTONRate <- ct.data$CLINTONVOT / (ct.data$REGVOT16 * ct.data$TURNOUT16)
+```
+
+### Qb:
+Evaluate the distribution of both percentages and chose that candidate those percentage distributions are easier to transform to symmetry. Map the percentage of voters of your candidate and interpret its spatial distribution. 
+
+```{r fig.height=6, fig.width=9, message=FALSE, warning=FALSE}
+Hmisc::histbackback(ct.data$TRUMPRate, ct.data$CLINTONRate,
+                                prob=TRUE, xlab=c("TRUMP","CLINTON"),
+                                main="Percentage Distribution")
+```
+```{r}
+e1071::skewness(ct.data$TRUMPRate) ; e1071::skewness(ct.data$CLINTONRate)
+e1071::kurtosis(ct.data$TRUMPRate) ; e1071::kurtosis(ct.data$CLINTONRate)
+```
+
+**The distribution of Trump's vote percentage is more evenly and normally distributed from both skewness and kurtosis metric.**
+
+```{r fig.height=8, fig.width=12, message=FALSE, warning=FALSE}
+mapplot(info = ct.data$CLINTONRate,titile = "Vote Rate for CLINTON",legend_title = "Vote Rate",breaks = 8)
+```
+
+### Qc:
+ Can all 254 counties be used in the analysis or do a few counties have a too small denominator, thus leading to instable percentage estimates.
+ 
+```{r fig.height=7, fig.width=10, message=FALSE, warning=FALSE}
+ct.data$Voters <-  ct.data$REGVOT16 * ct.data$TURNOUT16
+
+plot(ct.data$Voters,ct.data$CLINTONRate,main = "Number of voters against vote rate", xlab="Number of Voters ", ylab="Vote Rate ", pch=19)
+# abline(lm(ct.data$REGVOT16~ct.data$TRUMPRate + ct.data$MURDER), col="red") # regression line (y~x)
+lines(lowess(ct.data$Voters ,ct.data$CLINTONRate), col="blue") # lowess line (x,y)
+```
+
+**From this graph, we could clearly notice that when the number of voters goes lower, the fluctuation of vote rate increased substantially. From getting a more accurate regression result,  we should eliminate those counties to keep variance stable.**
+
+**In here, I drop the lower 10% counties from my dataset.**
+
+```{r fig.height=8, fig.width=12}
+index <- which(ct.data$Voters > quantile(ct.data$Voters,0.05))
+ct.shp.remain <- ct.shp[index,]
+ct.data.remain <- ct.data[index,]
+
+plot(ng.shp,axes=T,col=grey(0.9),border="white",xlim=ct.bbox[1,],ylim=ct.bbox[2,])
+  mapColorRamp(ct.data.remain$CLINTONRate,ct.shp.remain,breaks= 8,map.title= "Remain Counties",
+               legend.title= "Vote Rate",legend.cex=1.4, add.to.map=T)
+```
+
+## Task 2 Selection of Independent Variables (2 points)
+
+### Qa:
+Identify 4 to 6 potential independent metric variables **plus** at least one *factor* that you expect to influence the proportion of voters.
+
+```{r fig.height=6, fig.width=9, message=FALSE, warning=FALSE}
+# Transform denpendent variable
+
+ct.data.remain$CLINTONRate.log <- log(ct.data.remain$CLINTONRate)
+
+hist(ct.data.remain$CLINTONRate.log,breaks = 12,main = paste('Tranformed Vote Rate, Skewness =',round(e1071::skewness(ct.data.remain$CLINTONRate.log),2)),xlab = 'x')
+```
+
+```{r}
+library(MASS)
+full.model <- lm(CLINTONRate.log~REGION + INCOME + COLLEGEDEG + CRIMERATE + SINGLEMOM + LANEMILES + MEDAGE, data = ct.data.remain)
+step.model <- stepAIC(full.model, direction = "both", trace = FALSE)
+summary(step.model)
+```
+
+## Task 3 Exploration of Variables (3 points)
+
+In a scatter plot matrix or, where appropriate, box-plot: 
+
+### Qa:
+Explore the univariate distribution of the dependent variable.
+
+```{r}
+summary(ct.data.remain$CLINTONRate.log)
+```
+
+
+```{r fig.height=7, fig.width=10}
+boxplot(CLINTONRate.log~REGION, data = ct.data.remain, main = "Voting Rate for each Region", xlab = "Region", ylab = "Voting Rate")
+```
+
+
+
+
+```{r fig.height=10, fig.width=14}
+ scatterplotMatrix(~ CLINTONRate.log + INCOME + COLLEGEDEG + CRIMERATE + SINGLEMOM + LANEMILES + MEDAGE, data = ct.data.remain,smooth=list(span = 0.35, lty.smooth=1, col.smooth="red", col.var="salmon"), regLine=list(col="green"))
+
+```
+
+```{r fig.height=8, fig.width=12}
+ct.data.remain$COLLEGEDEG.log <- log(ct.data.remain$COLLEGEDEG)
+ct.data.remain$LANEMILES.log <- log(ct.data.remain$LANEMILES)
+par(mfrow = c(2,2))
+hist(ct.data.remain$COLLEGEDEG.log,breaks = 12,main = paste('Tranformed COLLEGEDEG, Skewness =',round(e1071::skewness(ct.data.remain$COLLEGEDEG.log),2)),xlab = 'x')
+hist(ct.data.remain$COLLEGEDEG,breaks = 12,main = paste('Origin COLLEGEDEG, Skewness =',round(e1071::skewness(ct.data.remain$COLLEGEDEG),2)),xlab = 'x')
+hist(ct.data.remain$LANEMILES.log,breaks = 12,main = paste('Tranformed LANEMILES, Skewness =',round(e1071::skewness(ct.data.remain$LANEMILES.log),2)),xlab = 'x')
+hist(ct.data.remain$LANEMILES,breaks = 12,main = paste('Origin LANEMILES, Skewness =',round(e1071::skewness(ct.data.remain$LANEMILES),2)),xlab = 'x')
+```
+
+```{r fig.height=10, fig.width=14}
+ scatterplotMatrix(~ CLINTONRate.log + INCOME + COLLEGEDEG.log + CRIMERATE + SINGLEMOM + LANEMILES.log + MEDAGE, data = ct.data.remain,smooth=list(span = 0.35, lty.smooth=1, col.smooth="red", col.var="salmon"), regLine=list(col="green"))
+
+```
+
+## Task 4 Are all selected variables and factors relevant and do their regression coefficients exhibit the expected sign
+
+### Qa:
+[a]	Are all selected variables and factors relevant and do their regression coefficients exhibit the expected sign?
+
+```{r}
+library(MASS)
+full.model <- lm(CLINTONRate.log~REGION + INCOME + COLLEGEDEG.log + CRIMERATE + SINGLEMOM + LANEMILES.log + MEDAGE, data = ct.data.remain)
+step.model <- stepAIC(full.model, direction = "both", trace = FALSE)
+summary(step.model)
+```
+
+```{r}
+vif(step.model)
+```
+
+```{r fig.height=8, fig.width=12}
+qqPlot(step.model)
+```
+
+```{r}
+shapiro.test(residuals(step.model))
+```
+
+```{r fig.height=7, fig.width=11}
+residualPlots(step.model)
+```
+
+```{r}
+updated.model <- update(step.model, .~.+I(COLLEGEDEG.log^2) + I(LANEMILES.log^2) + I(INCOME^2))
+summary(updated.model)
+```
+
+```{r}
+anova(step.model,updated.model)
+```
+
+```{r fig.height=8, fig.width=12}
+car::influenceIndexPlot(updated.model) 
+```
+
+```{r}
+ct.data.remain[c(135,144),c('CLINTONRate' ,'REGION','INCOME','COLLEGEDEG','MEDAGE','SINGLEMOM','LANEMILES')]
+```
+```{r}
+residuals(updated.model)[c(135,144)]
+updated.model$fitted.values[c(135,144)]
+summary(ct.data.remain$INCOME)
+summary(ct.data.remain$MEDAGE)
+summary(ct.data.remain$SINGLEMOM)
+```
+```{r}
+table(ct.data.remain$REGION)
+```
+
+```{r fig.height=7, fig.width=12, message=FALSE, warning=FALSE}
+auxreg<- lm(log(residuals(updated.model)^2)~log(ct.data.remain$Voters))
+plot(log(residuals(updated.model)^2)~log(ct.data.remain$Voters)); abline(auxreg, col="red")
+```
+
+```{r}
+lm.hetero <- lmHetero(CLINTONRate.log ~ REGION + INCOME + COLLEGEDEG.log + SINGLEMOM + LANEMILES.log + MEDAGE, hetero=~log(Voters), data=ct.data.remain )
+summary(lm.hetero)
+```
+
+```{r}
+lm.weight <- lm(CLINTONRate.log ~ REGION + INCOME + COLLEGEDEG.log + SINGLEMOM + LANEMILES.log + MEDAGE, data=ct.data.remain,weights=log(ct.data.remain$Voters))
+summary(lm.weight)
+```
+
+```{r}
+Resid.weight <- weighted.residuals(lm.weight)
+(length(Resid.weight[Resid.weight < 0]) )
+(length(Resid.weight[Resid.weight > 0]) )
+```
+
+```{r fig.height=10, fig.width=13}
+plot(ng.shp,axes=T,col=grey(0.9),border="white",xlim=ct.bbox[1,],ylim=ct.bbox[2,])               # first background
+mapBiPolar(Resid.weight, ct.shp.remain, neg.breaks=6, pos.breaks=6, break.value=0.0, map.title="Refined Residuals",legend.title="Residuals", legend.cex=1.5, add.to.map=T)
+```
+
+```{r fig.height=8, fig.width=12}
+ct.link <- poly2nb(ct.shp.remain, queen=F) 
+ct.centroid <- coordinates(ct.shp.remain) 
+plot(ng.shp,axes=T,col=grey(0.9),border="white",xlim=ct.bbox[1,],ylim=ct.bbox[2,])
+plot(ct.shp.remain,col="palegreen3" ,border=grey(0.9), axes=T, add=T)
+plot(ct.link,coords=ct.centroid, pch=19, cex=0.1,col="blue", add=T)
+title("Spatial Links among Counties")
+box()
+```
+
+```{r fig.height=7, fig.width=12}
+ct.linkW <- nb2listw(ct.link, style="W")
+spOutliers <- moran.plot(weighted.residuals(lm.weight),ct.linkW, labels=ct.data.remain$NAME)
+```
+
+```{r}
+lm.morantest(lm.weight, ct.linkW) 
+```
+
+```{r message=FALSE, warning=FALSE}
+rate.SAR <- spautolm(lm.weight,na.action="na.omit", listw=ct.linkW, family="SAR")
+summary(rate.SAR)
+```
+
+```{r message=FALSE, warning=FALSE}
+likeH0 <- lm.hetero$logLikeH1    # unrestrcted model
+likeH1 <- logLik(rate.SAR)
+cat("chi-square value:  ", chi <- -2*(likeH0[1]-likeH1[1]))
+cat("\nerror-probability: ", pchisq(chi, df=1, lower.tail=F))
+```
+
+```{r message=FALSE, warning=FALSE}
+moran.mc(residuals(rate.SAR), ct.linkW, nsim=9999) 
+```
+

@@ -1,0 +1,187 @@
+---
+title: "Logistic & Poisson Regression"
+author: "Yalin Yang"
+date: "`r Sys.Date()`"
+output:
+  html_notebook:
+    toc: TRUE
+    toc_float: TRUE
+  word_document:
+    toc: no
+    toc_depth: '3'
+--- 
+
+```{r message=FALSE, warning=FALSE}
+# load helper package
+library(car)
+data(Mroz)
+attach(Mroz)
+```
+
+## Task 2 Model discussion [2 points]
+
+[a] Build a logistic regression model for the probability of lfp with these independent variables and give the 95% confidence intervals around the estimated logistic regression parameters
+
+```{r}
+GLM.01 <- glm(lfp ~ k5 + k618 + age + wc + hc + lwg + inc, family=binomial(logit), trace=TRUE, data=Mroz)
+summary(GLM.01)  #slope is for logit, not for probability
+```
+```{r}
+vif(GLM.01)
+```
+```{r message=FALSE, warning=FALSE}
+confint(GLM.01, level=0.95, type="Wald",trace = FALSE)
+```
+
+```{r fig.width=12}
+library(effects)     # Important: Use version 3.0-6 or newer
+plot(allEffects(GLM.01), type="response", ylim=c(0,1), ask=FALSE)
+```
+
+## Task 3 : Perform a likelihood ratio test [1 point]
+
+```{r}
+table(lfp)
+```
+
+
+```{r}
+GLM.02 <- glm(lfp ~ k5 + age + wc + lwg + inc, family=binomial(logit), trace=TRUE, data=Mroz)
+summary(GLM.02)  #slope is for logit, not for probability
+```
+
+```{r}
+## Likelihood Ratio Test
+( LR <- -2*(logLik(GLM.02)-logLik(GLM.01)) )
+( pchisq(LR[1], df=2, lower.tail=F) )
+```
+```{r}
+GLM.00 <- glm(lfp ~ 1, family=binomial(logit), trace=TRUE, data=Mroz) # just intersecpt
+summary(GLM.00)
+cat("Deviance: ", logLik(GLM.00)*-2)
+```
+
+## Task 4: Conditional effects plots [2 points]
+
+```{r fig.height=8, fig.width=12, message=FALSE, warning=FALSE}
+# Low prob respondent
+eff.GLM.low <- effect("inc",GLM.02,
+                      given.values = c(k5 = 2,age = 49,"wcyes" = 0,lwg = 0.81))
+plot(eff.GLM.low, type="response", ylim=c(0,1), ylab=expression(Pr(Y[i]=="Close")), 
+     main="Low Probability Respondents")
+```
+
+```{r fig.height=8, fig.width=12, warning=FALSE}
+# High prob respondent
+eff.GLM.hi <- effect("inc",GLM.02,
+                     given.values=c(k5 = 0,age = 49,"wcyes" = 1,lwg = 1.40))
+plot(eff.GLM.hi, type="response", ylim=c(0,1), ylab=expression(Pr(Y[i]=="Close")), 
+     main="High Probability Respondents")
+```
+
+# Part 2: Poisson and Logistic Regression [4 points]
+
+## Task 5
+
+```{r message=FALSE, warning=FALSE}
+library(CancerSEA)
+data(cancer)
+attach(cancer)
+```
+
+
+```{r}
+lm.poisson <- glm(L_WM_P2_CN~URBRUR+RAD_MD+I(RAD_MD^2)+TOBACCO,offset=log(L_WM_P2_EX),family=poisson, data=cancer)
+summary(lm.poisson)
+```
+
+
+
+```{r fig.height=8, fig.width=12}
+plot(allEffects(lm.poisson))
+```
+
+```{r}
+cancer$L_WM_P2_RT_rate <- cancer$L_WM_P2_RT/100000
+hist(cancer$L_WM_P2_RT_rate)
+```
+
+```{r message=FALSE, warning=FALSE}
+GLM.01 <- glm(L_WM_P2_RT_rate~ URBRUR+RAD_MD+I(RAD_MD^2)+TOBACCO, family=binomial(logit), weights = (POP1980/2),trace=TRUE, data=cancer)
+summary(GLM.01)  #slope is for logit, not for probability
+```
+
+```{r fig.height=8, fig.width=12, message=FALSE, warning=FALSE}
+# Average prob respondent
+eff.GLM.average <- effect("RAD_MD",GLM.01)
+plot(eff.GLM.average, ylim=c(0.0005,0.0009), type="response", ylab=expression(Pr(Y[i]=="Close")),    # ylim is in terms of probs
+     main="Average Probability Respondents")
+```
+
+## Task 8 
+```{r}
+GLM.02 <- glm(L_WM_P2_RT_rate~ URBRUR+RAD_MD+I(RAD_MD^2)+TOBACCO, family=quasibinomial, weights = (POP1980/2),trace=TRUE, data=cancer)
+summary(GLM.02)  #slope is for logit, not for probability
+```
+
+```{r}
+
+```
+
+# Part 3
+
+## Task 9 
+
+```{r}
+upfing1 <- foreign::read.spss("G:\\UTD_Classes\\2020Spring\\GISC7310_AdvancedDataAnalysis\\Lab5\\UPFING.SAV", use.value.labels=TRUE, to.data.frame=TRUE)
+```
+
+```{r}
+upfing <- upfing1[-which(upfing1$I == upfing1$J),]
+upfing$lnPI <- log(upfing$PI)
+upfing$lnPJ <- log(upfing$PJ)
+upfing$lnDIJ <- upfing$DIJ 
+upfing$lnDIJ[upfing$DIJ >0 ] <- log(upfing$DIJ[upfing$DIJ >0 ])
+```
+
+```{r}
+str(upfing)
+```
+
+```{r}
+mod01 <- glm(MIJ ~ PI +PJ+DIJ, data=upfing, family = poisson(log))
+summary(mod01)
+```
+
+$E(m_{ij}) = \beta_0 * p_i^{\beta_1} * p_j^{\beta_2} * d_{ij}^{\beta_3}$
+
+```{r}
+mod01$coefficients
+lambda <- exp(a+b*xObs) 
+```
+
+
+
+
+
+```{r fig.height=6, fig.width=15}
+upfing$normal_MIJ <- scales::rescale(upfing$MIJ,to = c(0,1))
+par(mfrow = c(1,2))
+hist(upfing$MIJ)
+hist(upfing$normal_MIJ)
+```
+
+```{r message=FALSE, warning=FALSE}
+mod02 <- glm(normal_MIJ~ lnPI+lnPJ+lnDIJ, family=quasibinomial, trace=TRUE, data=upfing)
+summary(mod02)  #slope is for logit, not for probability
+```
+
+```{r}
+mod03 <- glm(normal_MIJ~ lnPI+lnPJ+lnDIJ, family=quasibinomial, trace=TRUE, data=upfing)
+summary(mod03)  #slope is for logit, not for probability
+```
+
+```{r fig.height=10, fig.width=15}
+plot(allEffects(mod03), type="response", ylim=c(0,1), ask=FALSE)
+```
+
