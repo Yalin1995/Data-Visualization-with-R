@@ -8,7 +8,7 @@ Data Visualization with R
 ## Labs
 ### 1. Lab01
 * [R Code(html)](https://yalin1995.github.io/Data-Visualization-with-R/Lab01/GISC7310Lab01.html)
-* [Sample Answer](https://yalin1995.github.io/Data-Visualization-with-R/Lab01/Lab01GISC7310SP2020 Sample Answer.pdf)
+* [Sample Answer](https://yalin1995.github.io/Data-Visualization-with-R/Lab01/Lab01GISC7310SP2020%20Sample%20Answer.pdf)
 
 ## Chapters
 ### 1. [Population and Sampling Distributions](https://yalin1995.github.io/Data-Visualization-with-R/1.Population%20and%20Sampling%20Distributions/HamApp01.pdf)
