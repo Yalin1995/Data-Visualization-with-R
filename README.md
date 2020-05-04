@@ -36,6 +36,12 @@ Data Visualization with R
 * [R Code(pdf)](https://yalin1995.github.io/Data-Visualization-with-R/05Regression%20Diagnostics/Lecture05.pdf)
 * [R Code(html)](https://yalin1995.github.io/Data-Visualization-with-R/05Regression%20Diagnostics/Lecture05.html)
 
+### 6. Spatial Autocorrelation & Heteroscedasticity
+* [R Code(html)](https://yalin1995.github.io/Data-Visualization-with-R/06Spatial%20Autocorrelation/Lecture06.html)
+* [Maximum Likelihood](https://yalin1995.github.io/Data-Visualization-with-R/06Spatial%20Autocorrelation/MaximumLikelihoodAbbridged.pdf)
+* [Spatial Autocorrelation](https://yalin1995.github.io/Data-Visualization-with-R/06Spatial%20Autocorrelation/SpatialAutocorrelation.pdf)
+* [Heteroscedasticity](https://yalin1995.github.io/Data-Visualization-with-R/06Spatial%20Autocorrelation/GLSHeteroAC.pdf)
+
 ### 8. [The Generalized Linear Model](https://yalin1995.github.io/Data-Visualization-with-R/08The%20Generalized%20Linear%20Model/GLMwithExtension.pdf)
 * [R Code(html)](https://yalin1995.github.io/Data-Visualization-with-R/08The%20Generalized%20Linear%20Model/Lecture08.html)
 
