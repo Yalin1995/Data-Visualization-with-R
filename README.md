@@ -18,6 +18,7 @@ Data Visualization with R
 ### 3. Lab03
 * [Sample Answer](https://yalin1995.github.io/Data-Visualization-with-R/Lab03/Lab03GISC7310Springl2020SampleAnswer.pdf)
 ### 4. Lab04
+* [R Code(html)](https://yalin1995.github.io/Data-Visualization-with-R/Lab02/YalinDALab04.html)
 * [Sample Answer](https://yalin1995.github.io/Data-Visualization-with-R/Lab04/YalinLab04.pdf)
 ### 5. Lab05
 * [Sample Answer](https://yalin1995.github.io/Data-Visualization-with-R/Lab05/Lab05GISC7310SampleAnswerSP2020(1).pdf)
