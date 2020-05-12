@@ -7,6 +7,7 @@ Data Visualization with R
 
 ## Mind Maps
 * [All Content](http://www.xmind.net/m/6v4UKP)
+* [R Code](http://www.xmind.net/m/wKNkPG)
 
 ## Labs
 ### 1. Lab01
