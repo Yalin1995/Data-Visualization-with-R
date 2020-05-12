@@ -6,16 +6,16 @@ output:
   html_document:
     toc: true
     toc_float: 
-          collapsed: false
+          collapsed: true
     number_sections: true          
     toc_depth: 3  
 ---
 
-## Task 1 Specification of the Dependent Variable (2 points)
+# Task1 Specification of the Dependent Variable (2 points)
 
 You are given the absolute counts of votes for Trump **(TRUMPVOT16)**, Clinton **(CLINTONVOT)** and others  **(OTHERVOT16)**, as well as the number of persons 18 years and older  **(POP18PLUS)**, number of registered voters  **(REGVOT16)** and the turnout rate  **(TURNOUT16)**.
 
-### Qa：
+## Qa：
 Calculate the **percentage of voters** who voted for either candidate. Be careful to select the proper reference population in the denominator. Justify your calculation.
 
 ```{r message=FALSE, warning=FALSE}
@@ -23,7 +23,7 @@ rm(list=ls(all=TRUE))
 library(maptools);library(car);library(spdep); library(TexMix)
 # Read Shapefile
 
-setwd('G:\\UTD_Classes\\2020Spring\\GISC7310_AdvancedDataAnalysis\\LC6MLandGLS\\TXCnty2018')
+setwd('G:\\UTD_Classes\\2020Spring\\GISC7310_AdvancedDataAnalysis\\Lab04\\TXCnty2018')
 ct.shp <- rgdal::readOGR(dsn=getwd(), layer="TXCnty", integer64="warn.loss")
 hw.shp <- rgdal::readOGR(dsn=getwd(), layer="InterStateHwy", integer64="warn.loss")
 ng.shp <- rgdal::readOGR(dsn=getwd(), layer="TXNeighbors", integer64="warn.loss")
@@ -31,11 +31,11 @@ ct.bbox <- bbox(ct.shp)
 ```
 
 ```{r}
-mapplot <- function(titile,info,breaks,legend_title){
-  
-  plot(ng.shp,axes=T,col=grey(0.9),border="white",xlim=ct.bbox[1,],ylim=ct.bbox[2,])
+map_colorRamp_plot <- function(titile,info,breaks,legend_title){
+  plot(ng.shp,axes=T,col=grey(0.9),border="white", bg="lightblue",xlim=ct.bbox[1,],ylim=ct.bbox[2,])
   mapColorRamp(info,ct.shp,breaks=breaks,map.title=titile,
                legend.title= legend_title,legend.cex=1.4, add.to.map=T)
+  plot(hw.shp, col="tomato4", lwd=1, add=T)             # insert road network for orientation
 }
 ```
 
@@ -46,27 +46,33 @@ ct.data$TRUMPRate <- ct.data$TRUMPVOT16 / (ct.data$REGVOT16 * ct.data$TURNOUT16)
 ct.data$CLINTONRate <- ct.data$CLINTONVOT / (ct.data$REGVOT16 * ct.data$TURNOUT16)
 ```
 
-### Qb:
-Evaluate the distribution of both percentages and chose that candidate those percentage distributions are easier to transform to symmetry. Map the percentage of voters of your candidate and interpret its spatial distribution. 
+For evaluating the percentage of voters who voted for either Clinton or Trump, the research population should be all voters who actually participate in an election. That is why I select the total number of registered voters multiple turnout percentage as my denominator.
 
-```{r fig.height=6, fig.width=9, message=FALSE, warning=FALSE}
+## Qb:
+
+Evaluate the **distribution** of both percentages and chose that candidate those percentage distributions are easier to transform to symmetry. Map the percentage of voters of your candidate and interpret its spatial distribution. 
+
+```{r fig.height=8, fig.width=12, message=FALSE, warning=FALSE}
 Hmisc::histbackback(ct.data$TRUMPRate, ct.data$CLINTONRate,
                                 prob=TRUE, xlab=c("TRUMP","CLINTON"),
                                 main="Percentage Distribution")
+text(-2,0.8,paste('Skewness:',round(e1071::skewness(ct.data$TRUMPRate),4)),cex = 1.2)
+text(-2,0.2,paste('Kurtosis:',round(e1071::kurtosis(ct.data$TRUMPRate),4)),cex = 1.2)
+text(2,7.8,paste('Skewness:',round(e1071::skewness(ct.data$CLINTONRate),4)),cex = 1.2)
+text(2,7.2,paste('Kurtosis:',round(e1071::kurtosis(ct.data$CLINTONRate),4)),cex = 1.2)
 ```
-```{r}
-e1071::skewness(ct.data$TRUMPRate) ; e1071::skewness(ct.data$CLINTONRate)
-e1071::kurtosis(ct.data$TRUMPRate) ; e1071::kurtosis(ct.data$CLINTONRate)
-```
+
+From both skewness and kurtosis metric, both two distributions are not normally and evenly distributed. But for later transforming and interpreting purposes,  I would choose Clinton distribution since it positively skews, could perform log transformation on it.
 
 **The distribution of Trump's vote percentage is more evenly and normally distributed from both skewness and kurtosis metric.**
 
 ```{r fig.height=8, fig.width=12, message=FALSE, warning=FALSE}
-mapplot(info = ct.data$CLINTONRate,titile = "Vote Rate for CLINTON",legend_title = "Vote Rate",breaks = 8)
+map_colorRamp_plot(info = ct.data$CLINTONRate,titile = "Vote Rate for CLINTON",legend_title = "Vote Rate",breaks = 8)
 ```
+The voting rate for Clinton is increasing from north to south. In southern Texas, the voting rate reaches a peak. It is hard for me to interpret it with the local political environment but shows a strong spatial correlation.
 
-### Qc:
- Can all 254 counties be used in the analysis or do a few counties have a too small denominator, thus leading to instable percentage estimates.
+## Qc:
+Can all 254 counties be used in the analysis or do a few counties have a too small denominator, thus leading to instable percentage estimates.
  
 ```{r fig.height=7, fig.width=10, message=FALSE, warning=FALSE}
 ct.data$Voters <-  ct.data$REGVOT16 * ct.data$TURNOUT16
@@ -76,24 +82,37 @@ plot(ct.data$Voters,ct.data$CLINTONRate,main = "Number of voters against vote ra
 lines(lowess(ct.data$Voters ,ct.data$CLINTONRate), col="blue") # lowess line (x,y)
 ```
 
-**From this graph, we could clearly notice that when the number of voters goes lower, the fluctuation of vote rate increased substantially. From getting a more accurate regression result,  we should eliminate those counties to keep variance stable.**
+From this graph, we could clearly notice that when the number of voters goes lower, the fluctuation of vote rate increased substantially. From getting a more accurate regression result,  we should eliminate those counties to keep variance stable.
 
-**In here, I drop the lower 10% counties from my dataset.**
+In here, I drop the lowest 5% counties from my dataset.
 
 ```{r fig.height=8, fig.width=12}
 index <- which(ct.data$Voters > quantile(ct.data$Voters,0.05))
 ct.shp.remain <- ct.shp[index,]
 ct.data.remain <- ct.data[index,]
 
-plot(ng.shp,axes=T,col=grey(0.9),border="white",xlim=ct.bbox[1,],ylim=ct.bbox[2,])
-  mapColorRamp(ct.data.remain$CLINTONRate,ct.shp.remain,breaks= 8,map.title= "Remain Counties",
-               legend.title= "Vote Rate",legend.cex=1.4, add.to.map=T)
+
+plot(ng.shp,axes=T,col=grey(0.9),border="white", bg="lightblue",xlim=ct.bbox[1,],ylim=ct.bbox[2,])
+mapColorRamp(ct.data.remain$CLINTONRate,ct.shp.remain,breaks= 8,map.title= "Remain Counties",
+             legend.title= "Vote Rate",legend.cex=1.4, add.to.map=T)
+plot(hw.shp, col="tomato4", lwd=1, add=T)             # insert road network for orientation
 ```
 
-## Task 2 Selection of Independent Variables (2 points)
+# Task2 Selection of Independent Variables (2 points)
 
-### Qa:
-Identify 4 to 6 potential independent metric variables **plus** at least one *factor* that you expect to influence the proportion of voters.
+## Qa:
+Identify 4 to 6 potential independent metric variables **plus** at least one factor that you expect to influence the proportion of voters.
+
+## Qb:
+Formulate common-sense hypotheses why and which direction these potential independent variables will influence the election outcome. 
+Document items 2 [a] and [b] in a table.
+
+# Task3 Exploration of Variables (3 points)
+
+In a scatter plot matrix or, where appropriate, box-plot: 
+
+## Qa:
+Explore the univariate distribution of the dependent variable.
 
 ```{r fig.height=6, fig.width=9, message=FALSE, warning=FALSE}
 # Transform denpendent variable
@@ -103,36 +122,30 @@ ct.data.remain$CLINTONRate.log <- log(ct.data.remain$CLINTONRate)
 hist(ct.data.remain$CLINTONRate.log,breaks = 12,main = paste('Tranformed Vote Rate, Skewness =',round(e1071::skewness(ct.data.remain$CLINTONRate.log),2)),xlab = 'x')
 ```
 
-```{r}
-library(MASS)
-full.model <- lm(CLINTONRate.log~REGION + INCOME + COLLEGEDEG + CRIMERATE + SINGLEMOM + LANEMILES + MEDAGE, data = ct.data.remain)
-step.model <- stepAIC(full.model, direction = "both", trace = FALSE)
-summary(step.model)
+As discussed before, the original voting rate is positively skewed. Therefore, we applied the log transformation to calibrate the dependent variable.
+
+## Qb:
+Explore the relationship of the independent variables and factor(s) with the dependent variable. 
+
+```{r fig.height=8, fig.width=15}
+boxplot(CLINTONRate.log~REGION, data = ct.data.remain, main = "Voting Rate for each Region",
+        xlab = "Region", ylab = "Voting Rate",las = 2)
 ```
 
-## Task 3 Exploration of Variables (3 points)
+Through the box plot, we could find an obvious difference of voting rate for Clinton from place to place. The lower valley area has a comparatively high expectation and most compact quantile. Although from the first glimpse of the map, we may think that the southern areas have the highest voting rate, the variance among those places also relatively high according to this plot.
 
-In a scatter plot matrix or, where appropriate, box-plot: 
-
-### Qa:
-Explore the univariate distribution of the dependent variable.
-
-```{r}
-summary(ct.data.remain$CLINTONRate.log)
-```
-
-
-```{r fig.height=7, fig.width=10}
-boxplot(CLINTONRate.log~REGION, data = ct.data.remain, main = "Voting Rate for each Region", xlab = "Region", ylab = "Voting Rate")
-```
-
-
-
+## Qc:
+Explore the univariate and bivariate distributions of the independent metric variables. 
 
 ```{r fig.height=10, fig.width=14}
  scatterplotMatrix(~ CLINTONRate.log + INCOME + COLLEGEDEG + CRIMERATE + SINGLEMOM + LANEMILES + MEDAGE, data = ct.data.remain,smooth=list(span = 0.35, lty.smooth=1, col.smooth="red", col.var="salmon"), regLine=list(col="green"))
 
 ```
+
+## Qd:
+Does this exploration point at any variable transformations for your initial regression model? 
+
+Yes, since COLLEGE DEGREE and LANE MILES are highly positively skewed, I applied the log-transformation on them.
 
 ```{r fig.height=8, fig.width=12}
 ct.data.remain$COLLEGEDEG.log <- log(ct.data.remain$COLLEGEDEG)
@@ -144,26 +157,42 @@ hist(ct.data.remain$LANEMILES.log,breaks = 12,main = paste('Tranformed LANEMILES
 hist(ct.data.remain$LANEMILES,breaks = 12,main = paste('Origin LANEMILES, Skewness =',round(e1071::skewness(ct.data.remain$LANEMILES),2)),xlab = 'x')
 ```
 
+At this point redo the scatterplot matrix or boxplot with the any selected variable transformation.
+
 ```{r fig.height=10, fig.width=14}
  scatterplotMatrix(~ CLINTONRate.log + INCOME + COLLEGEDEG.log + CRIMERATE + SINGLEMOM + LANEMILES.log + MEDAGE, data = ct.data.remain,smooth=list(span = 0.35, lty.smooth=1, col.smooth="red", col.var="salmon"), regLine=list(col="green"))
 
 ```
 
-## Task 4 Are all selected variables and factors relevant and do their regression coefficients exhibit the expected sign
+# Task4 Initial Trial Regression Model (4 points)
 
-### Qa:
+Even though the dependent variable is a rate and therefore technically follows a binomial distribution, proceed in your analysis with ordinary least squares, which is approximately valid. Based on the selected variables build an initial trial ordinary least squares regression model and perform a thorough aspatial model diagnostics. Provide supportive plots and statistics. 
+
+Guiding questions are:
+
+## Qa:
 [a]	Are all selected variables and factors relevant and do their regression coefficients exhibit the expected sign?
 
 ```{r}
 library(MASS)
 full.model <- lm(CLINTONRate.log~REGION + INCOME + COLLEGEDEG.log + CRIMERATE + SINGLEMOM + LANEMILES.log + MEDAGE, data = ct.data.remain)
 step.model <- stepAIC(full.model, direction = "both", trace = FALSE)
+summary(full.model)
 summary(step.model)
 ```
+Since the relationship between the crime rate and the dependent variable shares *a similar pattern with the relationship between the crime rate and single mom* (actually not since the vif score is very low). We may assume the "single mom" variable accounts for the influence of the crime rate. Based on the t-test, we should drop crime rate and do regression again.
+
+## Qb:
+Is multicollinearity a problem? 
 
 ```{r}
+vif(full.model)
 vif(step.model)
 ```
+Vif values are all smaller than 10, so there is no multicollinearity issue.
+
+## Qc:
+[c]	Are the model residuals approximately normally distributed? 
 
 ```{r fig.height=8, fig.width=12}
 qqPlot(step.model)
@@ -173,9 +202,15 @@ qqPlot(step.model)
 shapiro.test(residuals(step.model))
 ```
 
+Results from the Shapiro test indicates that we failed to reject the none hypothesis, which means our residuals are normally distributed.
+
+## Qd:
+[d]	Do you need to refine the variable transformations or add quadratic terms? 
+
 ```{r fig.height=7, fig.width=11}
 residualPlots(step.model)
 ```
+Results from the Tukey test indicates that INCOME, COLLEGEDEG.log, and LANEMILES.log has a significant quadratic impact on the dependent variable  
 
 ```{r}
 updated.model <- update(step.model, .~.+I(COLLEGEDEG.log^2) + I(LANEMILES.log^2) + I(INCOME^2))
@@ -186,33 +221,71 @@ summary(updated.model)
 anova(step.model,updated.model)
 ```
 
+## Qe:
+[e]	Are there influential cases and outliers present in the model? 
+
 ```{r fig.height=8, fig.width=12}
 car::influenceIndexPlot(updated.model) 
 ```
+From the adjusted p-value, there is no observation near to 0, so I do not think there has an extreme outlier. If with severe restrict, we could take a look at #135 and #144 observations since their p-value is comparatively lower.
 
+## Qf:
+[f]	Speculate why some observations appear to be “extreme” and decide what to do with these observations: Do you need to drop the associated counties from the analysis because they are not representative of the underlying population or have “unstable” variable values?
 ```{r}
 ct.data.remain[c(135,144),c('CLINTONRate' ,'REGION','INCOME','COLLEGEDEG','MEDAGE','SINGLEMOM','LANEMILES')]
 ```
+
 ```{r}
-residuals(updated.model)[c(135,144)]
-updated.model$fitted.values[c(135,144)]
 summary(ct.data.remain$INCOME)
 summary(ct.data.remain$MEDAGE)
 summary(ct.data.remain$SINGLEMOM)
 ```
-```{r}
-table(ct.data.remain$REGION)
-```
+
+By comparing the distribution of independent variables, I do not find the unreasonable or extreme value those two counties have. So, I would not drop them from my dataset.
+
+# Task5 Revised Regression Model (2 points)
+
+## Qa:
+Build a revised regression model and re-check its properties. Are all identified problems from item 4 ─ at least to some degree ─ addressed? Make sure to work with at least 4 meaningful metric variables and if the selected factor remains relevant, then keep it.
+
+Already update my model from the influnce plot steps
+
+## Qb:
+
+Interpret your final model. Does it support the hypotheses that you have formulated in Task 2?
+
+# Task6 Heteroscedasticity Investigation (2 points)
+Note: The size of the reference population underlying the voters’ percentages for selected candidate varies widely from county to county. Use the model structure from task 5.
+
+## Qa:
+[a] Estimate and interpret the parameters {$r_0,r_1$}  of the multiplicative heteroscedasticity model $\sigma_i^2 = exp(r_0 * 1 + r_1 * log(refpop_i))$
 
 ```{r fig.height=7, fig.width=12, message=FALSE, warning=FALSE}
 auxreg<- lm(log(residuals(updated.model)^2)~log(ct.data.remain$Voters))
 plot(log(residuals(updated.model)^2)~log(ct.data.remain$Voters)); abline(auxreg, col="red")
 ```
+it is obvious that the variance of residual is not consistent, it varies when the voters' number changes. And the slope is negative, which means variance should be smaller when the voters' number goes larger.
+
+## Qb:
+Interpret the likelihood ratio test whether it is necessary to account for heteroscedasticity.
+
+## Qc:
+Interpret the regression parameters of your independent variables with regards to whether they or their significances are substantially different from those of your revised OLS model in item 5.
 
 ```{r}
 lm.hetero <- lmHetero(CLINTONRate.log ~ REGION + INCOME + COLLEGEDEG.log + SINGLEMOM + LANEMILES.log + MEDAGE, hetero=~log(Voters), data=ct.data.remain )
 summary(lm.hetero)
 ```
+The likelihood ratio test indicates the p-value is smaller than 0.05, so we can reject the null hypothesis and tentatively conclude that there has heterogeneity, so it is necessary to use the population as the weighted index. The Gamma Coefficients is -0.309259 and the p-value is pretty small, which means when the population goes larger, the variance of residual decrease significantly.
+
+The previous dominant variable income becomes insignificant in this model. It may have a high correlation with the population. The rest estimator remains a similar range as before. 
+
+# Task7 Spatial Residual Analysis (3 points)
+For the spatial residual analysis, you can proceed either with the refined OLS model from task 5 or, if there is significant heteroscedasticity, with heteroscedasticity model from task 6.
+
+## Qa:
+Map the regression residuals of your refined OLS model in a choropleth map with a bi-polar map theme broken around the neutral zero value. 
+Interpret the observed map pattern of positive and negative residuals. 
 
 ```{r}
 lm.weight <- lm(CLINTONRate.log ~ REGION + INCOME + COLLEGEDEG.log + SINGLEMOM + LANEMILES.log + MEDAGE, data=ct.data.remain,weights=log(ct.data.remain$Voters))
@@ -226,34 +299,55 @@ Resid.weight <- weighted.residuals(lm.weight)
 ```
 
 ```{r fig.height=10, fig.width=13}
-plot(ng.shp,axes=T,col=grey(0.9),border="white",xlim=ct.bbox[1,],ylim=ct.bbox[2,])               # first background
+plot(ng.shp,axes=T,col=grey(0.9),border="white",bg = 'light blue',xlim=ct.bbox[1,],ylim=ct.bbox[2,])               # first background
 mapBiPolar(Resid.weight, ct.shp.remain, neg.breaks=6, pos.breaks=6, break.value=0.0, map.title="Refined Residuals",legend.title="Residuals", legend.cex=1.5, add.to.map=T)
+plot(hw.shp, col="tomato4", lwd=1, add=T)             # insert road network for orientation
 ```
+
+## Qb:
+Generate the spatial links and plot its graph onto a map of the Texas Counties. Check whether this graph is connecting all counties properly.
 
 ```{r fig.height=8, fig.width=12}
 ct.link <- poly2nb(ct.shp.remain, queen=F) 
 ct.centroid <- coordinates(ct.shp.remain) 
-plot(ng.shp,axes=T,col=grey(0.9),border="white",xlim=ct.bbox[1,],ylim=ct.bbox[2,])
+plot(ng.shp,axes=T,col=grey(0.9),border="white",bg = 'light blue',xlim=ct.bbox[1,],ylim=ct.bbox[2,])
 plot(ct.shp.remain,col="palegreen3" ,border=grey(0.9), axes=T, add=T)
 plot(ct.link,coords=ct.centroid, pch=19, cex=0.1,col="blue", add=T)
 title("Spatial Links among Counties")
 box()
 ```
 
+## Qc:
+Generate a Moran scatterplot of the regression residuals and interpret it.
+
 ```{r fig.height=7, fig.width=12}
 ct.linkW <- nb2listw(ct.link, style="W")
 spOutliers <- moran.plot(weighted.residuals(lm.weight),ct.linkW, labels=ct.data.remain$NAME)
 ```
+The overall pattern exhibits a positive spatial autocorrelation, which means positive residual areas are generally surrounded by other positives, vice versa.
+
+## Qd:
+Test with the Moran’s I statistic whether the regression residuals of your final model are spatially independent or exhibit spatial autocorrelation.
 
 ```{r}
 lm.morantest(lm.weight, ct.linkW) 
 ```
+The p-value confirmed that the observed Moran's Index is significant. Since it's 0.29, which also means positive spatial autocorrelation exists in our dataset.
+
+# Task8 Estimate a Spatial Autoregressive Model (2 points)
+
+For the SAR model you can proceed either with the refined OLS model from task 5 or, if there is significant heteroscedasticity, with heteroscedasticity model from task 6.
+
+## Qa:
+Estimate a spatial autoregressive regression model and test with a likelihood ratio test whether the spatial autoregressive model improves significantly over your refined OLS model in item 5. 
+
+## Qb:
+Interpret the model. What is the spatial autocorrelation coefficient? Are the estimated regression coefficients of the autoregressive model and their significances substantially different from the refined OLS model in item 5?
 
 ```{r message=FALSE, warning=FALSE}
 rate.SAR <- spautolm(lm.weight,na.action="na.omit", listw=ct.linkW, family="SAR")
 summary(rate.SAR)
 ```
-
 ```{r message=FALSE, warning=FALSE}
 likeH0 <- lm.hetero$logLikeH1    # unrestrcted model
 likeH1 <- logLik(rate.SAR)
@@ -261,7 +355,14 @@ cat("chi-square value:  ", chi <- -2*(likeH0[1]-likeH1[1]))
 cat("\nerror-probability: ", pchisq(chi, df=1, lower.tail=F))
 ```
 
+
+The error probability is much lower than 0.05, which means the calibration of spatial autocorrelation improves our model significantly. And the lambda from the SAR model is 0.7, which indicates positive spatial autocorrelation exists in our dataset. P-value also confirms it is significant.
+
+## Qc:
+Test the residuals of the autoregressive model for spatial autocorrelation and comment on the result.
+
 ```{r message=FALSE, warning=FALSE}
 moran.mc(residuals(rate.SAR), ct.linkW, nsim=9999) 
 ```
 
+Results from a total of 10 thousand testings show that there is no significant spatial autocorrelation in the residual of the SAR model,  which means the spatial autocorrelation in the original datasets already been eliminated by our SAR model.
