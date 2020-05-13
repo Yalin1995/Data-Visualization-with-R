@@ -22,6 +22,7 @@ Data Visualization with R
 * [R Code(html)](https://yalin1995.github.io/Data-Visualization-with-R/Lab04/YalinDALab04.html)
 * [Sample Answer](https://yalin1995.github.io/Data-Visualization-with-R/Lab04/YalinLab04.pdf)
 ### 5. Lab05
+* [R Code(html)](https://yalin1995.github.io/Data-Visualization-with-R/Lab05/YalinLab05.nb.html)
 * [Sample Answer](https://yalin1995.github.io/Data-Visualization-with-R/Lab05/Lab05GISC7310SampleAnswerSP2020(1).pdf)
 
 ## Chapters
