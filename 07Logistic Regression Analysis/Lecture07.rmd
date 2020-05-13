@@ -1,0 +1,257 @@
+---
+title: "Logistic Regression Analysis"
+author: "Yalin Yang"
+date: "`r Sys.Date()`"
+output:
+  html_notebook:
+    toc: TRUE
+    toc_float: TRUE
+  word_document:
+    toc: no
+    toc_depth: '3'
+--- 
+
+# Logits to Probability
+
+Logits $\in [+6,-6]$  and Regression line as $y = \beta_0 + \beta_1 * Logits$
+
+```{r}
+## linear form in x
+b0 <- 1   # Play with different parameters to see their effects on the Probs
+# b0 <- 0
+b1 <- 5
+
+x <- seq((-6-b0)/b1,(6-b0)/b1,length.out=200)  # Adjusted scale to b0 and b1
+#x <- seq((-40-b0),(40-b0),length.out=200)  # Adjusted scale to b0 and b1
+L <- b0+b1*x
+```
+
+## Different forms for p and (1-p)
+
+```{r}
+## Probs of first category
+p1 <- 1/(1+exp(-L))
+p2 <- exp(L)/(1+exp(L))
+
+## Probs of second category
+np1 <- 1/(1+exp(L))
+np2 <- exp(-L)/(1+exp(-L))
+
+## Logistic curve turning point
+medX <- -b0/b1
+```
+
+## Plot for different functional forms
+
+```{r fig.height=8, fig.width=12}
+layout(matrix(1:2,nrow=1,ncol=2))
+  ## Prob(Success)
+  plot(x,p1,ylab="1/(1+exp(-L))",ylim=c(0,1),type="l", lwd=2, col="red",main="Pr(X < x)")
+  abline(h=c(0,0.5,1),lty=2); abline(v=medX,lty=5)
+  ## Prob(Failure)
+  plot(x,np1,ylab="1/(1+exp(L))",ylim=c(0,1),type="l", lwd=2,col="blue", main="1 - Pr(X < x)")
+  abline(h=c(0,0.5,1),lty=2); abline(v=medX,lty=5)
+layout(matrix(1,nrow=1,ncol=1))
+
+```
+
+## Check equality of logit against L
+
+```{r}
+all.equal(L,log(p1/np1))
+```
+
+# Logistic Regression Analysis [Binary output]
+
+## Quick Look of dataset
+
+```{r}
+library(car)
+CloseVote <- foreign::read.spss("G:\\UTD_Classes\\2020Spring\\GISC7310_AdvancedDataAnalysis\\07Logistic Regression Analysis\\SchoolClosing.sav", to.data.frame=TRUE)
+
+## Evaluate which variables are factors
+sapply(CloseVote,is.factor)
+
+```
+
+Exploratory plots: barwidth _proportional_ to the NumOfObs in interval
+
+```{r fig.height=10, fig.width=15}
+par(mfrow = c(2,2))
+plot(close~lived, data=CloseVote)
+plot(close~educ, data=CloseVote)
+plot(close~contam, data=CloseVote)
+plot(close~hsc, data=CloseVote)
+plot(close~female, data=CloseVote)
+plot(close~kids, data=CloseVote)
+plot(close~nodad, data=CloseVote)
+```
+
+## Logistic modeling
+
+Just intercept an intercept model
+
+```{r}
+## generalize linear model
+GLM.00 <- glm(close ~ 1, family=binomial(logit), trace=TRUE, data=CloseVote) # just intersecpt
+summary(GLM.00)
+cat("Deviance: ", logLik(GLM.00)*-2)
+```
+
+Tansfer intercept from logis to probability model
+
+```{r}
+1/(1+exp(-(coef(GLM.00)[1])))            # predicted prob in favor of closing 1/(1+exp(-b_0)) 
+mean(unclass(CloseVote$close)-1)         # same as average zeros and ones
+```
+
+Bi-variate model "lived" and intercept
+
+```{r}
+GLM.01 <- glm(close ~ lived, family=binomial(logit), trace=TRUE, data=CloseVote)
+summary(GLM.01)  #slope is for logit, not for probability
+cat("Deviance: ", -2*logLik(GLM.01))
+```
+
+## Likelihood Ratio Test
+
+The "hard" way
+
+```{r}
+( LR <- -2*(logLik(GLM.00)-logLik(GLM.01)) )
+( pchisq(LR[1], df=1, lower.tail=F) )
+```
+
+The "easy" way
+
+```{r}
+anova(GLM.00,GLM.01,test="LRT")
+```
+
+## Alternative: The probit model 
+
+```{r}
+GLM.probit <- glm(close ~ lived, family=binomial(link=probit), trace=TRUE, data=CloseVote)
+summary(GLM.probit)
+logLik(GLM.probit)
+```
+
+## Full model and Restricted model
+
+Full model with all variables and interaction term nodad
+
+```{r fig.height=8, fig.width=12}
+GLM.02 <- glm(close ~ lived + educ + contam + hsc + nodad + female + kids ,
+              family=binomial(logit), trace=TRUE, data=CloseVote)
+summary(GLM.02, correlation=F)
+vif(GLM.02)
+logLik(GLM.02)
+# confint(GLM.02, level=0.95, type="Wald")
+```
+
+Restricted model without female and kids
+
+```{r}
+GLM.03 <- glm(close ~ lived + educ + contam + hsc + nodad ,
+             family=binomial(logit), data=CloseVote,
+             control=list(epsilon=1e-15,maxit=50, trace=TRUE))
+summary(GLM.03, correlation=TRUE)
+logLik(GLM.03)
+```
+
+### Likelihood Ratio Test
+
+```{r}
+anova(GLM.03,GLM.02,test="LRT")
+```
+
+## Effect plots
+
+```{r fig.height=8, fig.width=12}
+library(effects)
+## all independent variables with the others at average. 
+## Note type="response" for probability scale
+plot(allEffects(GLM.03), type="response", ylim=c(0,1), ask=FALSE)
+```
+
+```{r}
+## Group specifice effect plots
+summary(CloseVote)
+```
+
+### Low prob respondent
+```{r fig.height=8, fig.width=12, message=FALSE, warning=FALSE}
+eff.GLM.low <- effect("lived",GLM.03,
+                      given.values=c(educ=20,"contamyes"=0,"hscyes"=0,"nodadyes"=1))
+plot(eff.GLM.low, type="response", ylim=c(0,1), ylab=expression(Pr(Y[i]=="Close")), 
+     main="Low Probability Respondents")
+```
+
+### Average prob respondent
+
+```{r fig.height=8, fig.width=12, message=FALSE, warning=FALSE}
+eff.GLM.average <- effect("lived",GLM.03)
+plot(eff.GLM.average, ylim=c(0,1), type="response", ylab=expression(Pr(Y[i]=="Close")),    # ylim is in terms of probs
+     main="Average Probability Respondents")
+```
+
+### High prob respondent
+
+```{r fig.height=8, fig.width=12, message=FALSE, warning=FALSE}
+eff.GLM.hi <- effect("lived",GLM.03,
+                     given.values=c(educ=6,"contamyes"=1,"hscyes"=1,"nodadyes"=0))
+plot(eff.GLM.hi, type="response", ylim=c(0,1), ylab=expression(Pr(Y[i]=="Close")), 
+     main="High Probability Respondents")
+```
+
+# Residual Exploration
+
+## Response Residuals
+
+```{r fig.height=8, fig.width=12}
+resid.GLM.03 <- residuals(GLM.03, type="response")   # check ?residuals.glm
+pred.GLM.03 <- predict(GLM.03, type="response")      # check ?predict.glm
+plot(pred.GLM.03, resid.GLM.03, ylim=c(-1,1), xlim=c(0,1), 
+     ylab="Response Residuals", xlab="Predicted Probabilities")
+abline(h=0, lty=5)
+lines(lowess(pred.GLM.03, resid.GLM.03),lwd=2)  # Smoothed function to see the residual behavior
+```
+
+
+## Pearson Residuals (standardized residuals)
+
+```{r fig.height=8, fig.width=12}
+resid.GLM.03 <- residuals(GLM.03, type="pearson")   
+pred.GLM.03 <- predict(GLM.03, type="response")      
+plot(pred.GLM.03, resid.GLM.03, xlim=c(0,1), 
+     ylab="Pearson Residuals", xlab="Predicted Probabilities")
+abline(h=0, lty=5)
+lines(lowess(pred.GLM.03, resid.GLM.03),lwd=2)  # Smoothed function to see the residual behavior
+```
+
+# Logistic Regression Analysis [Rates]
+
+Weighted GLM specification
+
+```{r message=FALSE, warning=FALSE}
+insects <- data.frame(popDensity=c(1,4,10,22,55,121,210,444),
+                      females=c(1,3,7,18,22,41,52,79),
+                      males=c(0,1,3,4,33,80,158,365))
+
+insects$totalPop <- insects$females+insects$males
+insects$rateMale <- insects$males/insects$totalPop
+glm.weight <- glm(rateMale~log(popDensity), weights=totalPop, data=insects, family=binomial)
+summary(glm.weight)
+```
+
+```{r fig.height=8, fig.width=12}
+## Plot prediction
+xAxis <- seq(0,7,by=0.001)                                                    # value range of log(popDensity)
+probPred <- predict(glm.weight,list(popDensity=exp(xAxis)), type="response")   # type="response" give predicted probabilities
+plot(log(insects$popDensity), insects$rateMale, ylim=c(0,1), xlim=c(0,7), 
+     ylab=expression(Pr(Y[i] =="Male")),xlab=expression(log("Population Density")), 
+     pch=16, col="blue")
+lines(xAxis,probPred, col="red")
+abline(h=c(0,1),lty=3)
+```
+
