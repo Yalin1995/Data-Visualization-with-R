@@ -54,6 +54,9 @@ Data Visualization with R
 * [Heteroscedasticity](https://yalin1995.github.io/Data-Visualization-with-R/06Spatial%20Autocorrelation/GLSHeteroAC.pdf)
 * [R Code(html)](https://yalin1995.github.io/Data-Visualization-with-R/06Spatial%20Autocorrelation/Lecture06.html)
 
+### 7.[Logistic Regression Analysis](https://yalin1995.github.io/Data-Visualization-with-R/07Logistic%20Regression%20Analysis/Chapter07.pdf)
+* [R Code(html)](https://yalin1995.github.io/Data-Visualization-with-R/07Logistic%20Regression%20Analysis/Lecture07.nb.html)
+
 ### 8. [The Generalized Linear Model](https://yalin1995.github.io/Data-Visualization-with-R/08The%20Generalized%20Linear%20Model/GLMwithExtension.pdf)
 * [R Code(html)](https://yalin1995.github.io/Data-Visualization-with-R/08The%20Generalized%20Linear%20Model/Lecture08.html)
 
